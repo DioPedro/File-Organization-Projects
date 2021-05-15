@@ -58,7 +58,7 @@ void create_route_binary(FILE *csv_fp, FILE *bin_fp){
     printf("Header: %s\n", header_line);
     print_word_list(header_list);
 
-    // ESSA POHA TÁ ZUADO VELHO 
+    // ESSA POHA TÁ ZUADO V
     ROUTE_HEADER header;
     create_header(header, header_list);
 
