@@ -1,11 +1,10 @@
 CC = gcc
-SOURCES = sources/list.c sources/site.c sources/utils.c sources/design.c sources/menuavl.c sources/avl.c
+SOURCES = sources/route.c sources/str.c sources/vehicle.c
 INCLUDES = ./includes
-DOC = ./Googlebot_2.0_Doc.pdf ./googlebot.txt
 BINARY = ./main
 PROG = sources/main.c
 FLAGS = -Wall -Werror -g -lm -std=c99
-PROG_NAME = Googlebot_2.0
+PROG_NAME = Trabalho1
 VFLAGS = --leak-check=full --track-origins=yes --show-leak-kinds=all -s
 
 all:

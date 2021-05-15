@@ -7,10 +7,9 @@
 **************************************************
 */
 
-#ifndef VEHICLES_H
-#define VEHICLES_H
+#include "../includes/vehicle.h"
 
-typedef struct _VEHICLE_HEADER{
+struct _VEHICLE_HEADER{
     char status;
     long long int next_reg;
     int num_of_regs;
@@ -21,10 +20,10 @@ typedef struct _VEHICLE_HEADER{
     char route_description[26]; 
     char model_description[17];
     char category_description[20];
-} VEHICLE_HEADER;
+};
 
 // *_length ignores '\0'
-typedef struct _VEHICLE{
+struct _VEHICLE{
     char is_removed;        // "0" == true
     int register_length;
     char prefix[5];
@@ -35,6 +34,4 @@ typedef struct _VEHICLE{
     char *model;
     int category_length;
     char *category;
-} VEHICLE;
-
-#endif
+};
