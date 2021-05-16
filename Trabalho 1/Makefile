@@ -3,7 +3,7 @@ SOURCES = sources/route.c sources/str.c sources/vehicle.c
 INCLUDES = ./includes
 BINARY = ./main
 PROG = sources/main.c
-FLAGS = -Wall -Werror -g -lm -std=c99
+FLAGS = -Wall -Werror -g -lm
 PROG_NAME = Trabalho1
 VFLAGS = --leak-check=full --track-origins=yes --show-leak-kinds=all -s
 

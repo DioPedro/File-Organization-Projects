@@ -37,7 +37,7 @@ struct _ROUTE{
     If needed, this function can return @word length
     @size is the field size in bytes
 */
-void header_strings_creation(char *header_field, char *word, int size){
+static void header_strings_creation(char *header_field, char *word, int size){
     int cur_length = 0;
     for (; word[cur_length] != '\0'; cur_length++) 
         header_field[cur_length] = word[cur_length];
@@ -48,13 +48,13 @@ void header_strings_creation(char *header_field, char *word, int size){
 }
 
 // When writing on bin file, '\0'was being a problem, although we
-// wrote only @size byte 
-void write_data_strings(FILE *bin_fp, char *data_field, int size){
+// only wrote @size byte 
+static void write_data_strings(FILE *bin_fp, char *data_field, int size){
     for (int i = 0; i < size; i++)
         fwrite(&data_field[i], sizeof(char), 1, bin_fp);
 }
 
-bool check_integrity(char *csv_field, ROUTE_HEADER *header){
+static bool check_integrity(char *csv_field, ROUTE_HEADER *header){
     int length = strlen(csv_field);
     if (length == 0) 
         return FALSE;
@@ -71,10 +71,10 @@ bool check_integrity(char *csv_field, ROUTE_HEADER *header){
     return TRUE;
 }
 
-void fill_register(ROUTE *data, char **word, ROUTE_HEADER *header){
+static void fill_register(ROUTE *data, char **word, ROUTE_HEADER *header){
     bool is_ok = check_integrity(word[0], header);
     if (!is_ok){
-        data->route_code = 0;
+        data->route_code = atoi(word[0] + 1);
         data->is_removed = '0';
     } else {
         data->route_code = atoi(word[0]);
@@ -100,11 +100,11 @@ void fill_register(ROUTE *data, char **word, ROUTE_HEADER *header){
     }
 }
 
-void create_header(FILE *bin_fp, ROUTE_HEADER *header, WORDS *header_list){
+static void create_header(FILE *bin_fp, ROUTE_HEADER *header, WORDS *header_list){
     header->status = '0';
     fwrite(&(header->status), sizeof(char), 1, bin_fp);
     
-    header->next_reg = 175;
+    header->next_reg = 82;
     fwrite(&(header->next_reg), sizeof(long long int), 1, bin_fp);
 
     header->num_of_regs = 0;
@@ -129,10 +129,12 @@ void create_header(FILE *bin_fp, ROUTE_HEADER *header, WORDS *header_list){
     }
 }
 
-void write_data(FILE *bin_fp, ROUTE *data, ROUTE_HEADER *header){
-    /*  4 bytes(route_code)  + 1 byte(accepts_card) 
-        4 bytes(name_length) + 4 bytes(color_length)
-        color_length         + name_length        */
+static void write_data(FILE *bin_fp, ROUTE *data, ROUTE_HEADER *header){
+    /*  
+    4 bytes(route_code)  + 1 byte(accepts_card) 
+    4 bytes(name_length) + 4 bytes(color_length)
+    color_length         + name_length        
+    */
     data->register_length = 13 + data->color_length + data->name_length;
     
     fwrite(&(data->is_removed), sizeof(char), 1, bin_fp);
@@ -153,9 +155,23 @@ void write_data(FILE *bin_fp, ROUTE *data, ROUTE_HEADER *header){
 }
 
 // Free primary memory after a CSV read
-void free_data(WORDS *word_list, char *reg_line){
+static void free_data(WORDS *word_list, char *reg_line){
     free_word_list(word_list);
     free(reg_line);
+}
+
+static void update_header(FILE *bin_fp, ROUTE_HEADER *header){
+    header->next_reg = ftell(bin_fp);
+    
+    // Going to the begining of the file to update it's data
+    fseek(bin_fp, 0, SEEK_SET);
+
+    header->status = '1';
+
+    fwrite(&(header->status), sizeof(char), 1, bin_fp);
+    fwrite(&(header->next_reg), sizeof(long long int), 1, bin_fp);
+    fwrite(&(header->num_of_regs), sizeof(int), 1, bin_fp);
+    fwrite(&(header->num_of_removeds), sizeof(int), 1, bin_fp);
 }
 
 void create_route_binary(FILE *csv_fp, FILE *bin_fp){
@@ -189,6 +205,9 @@ void create_route_binary(FILE *csv_fp, FILE *bin_fp){
 
         free_data(word_list, reg_line);
     }
+
+    // Updating the header of the bin file after the creation of the size
+    update_header(bin_fp, &header);
 }
 
 /*
