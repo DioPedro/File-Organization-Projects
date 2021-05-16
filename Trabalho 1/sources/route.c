@@ -47,56 +47,148 @@ void header_strings_creation(char *header_field, char *word, int size){
         header_field[size] = '@';
 }
 
-void create_header(ROUTE_HEADER header, WORDS *header_list){
-    header.status = '0';
-    header.next_reg = 175;
-    header.num_of_regs = 0;
-    header.num_of_removeds = 0;
+// When writing on bin file, '\0'was being a problem, although we
+// wrote only @size byte 
+void write_data_strings(FILE *bin_fp, char *data_field, int size){
+    for (int i = 0; i < size; i++)
+        fwrite(&data_field[i], sizeof(char), 1, bin_fp);
+}
 
-    char **words = get_word_list(header_list);
-    if (words != NULL){
-        header_strings_creation(header.code_description, words[0], 15);
-        header_strings_creation(header.card_description, words[1], 13);
-        header_strings_creation(header.name_description, words[2], 13);
-        header_strings_creation(header.color_description, words[3], 24);
+bool check_integrity(char *csv_field, ROUTE_HEADER *header){
+    int length = strlen(csv_field);
+    if (length == 0) 
+        return FALSE;
+    
+    // If starts with an '*', the register is removed 
+    if (csv_field[0] == '*'){
+        header->num_of_removeds++;
+        return FALSE;
+    }
+
+    if (strcmp(csv_field, "NULO") == 0) 
+        return FALSE;
+
+    return TRUE;
+}
+
+void fill_register(ROUTE *data, char **word, ROUTE_HEADER *header){
+    bool is_ok = check_integrity(word[0], header);
+    if (!is_ok){
+        data->route_code = 0;
+        data->is_removed = '0';
+    } else {
+        data->route_code = atoi(word[0]);
+        data->is_removed = '1';
+    }
+
+    data->accepts_card = word[1][0]; // Copying the first char from string "x"  
+
+    is_ok = check_integrity(word[2], header);
+    if (!is_ok)
+        data->name_length = 0;
+    else { 
+        data->name_length = strlen(word[2]);
+        data->route_name = word[2];
+    }
+
+    is_ok = check_integrity(word[3], header);
+    if (!is_ok)
+        data->color_length = 0;
+    else {
+        data->color_length = strlen(word[3]);
+        data->color = word[3];
     }
 }
 
-void create_register(ROUTE reg, WORDS *word_list){
+void create_header(FILE *bin_fp, ROUTE_HEADER *header, WORDS *header_list){
+    header->status = '0';
+    fwrite(&(header->status), sizeof(char), 1, bin_fp);
     
+    header->next_reg = 175;
+    fwrite(&(header->next_reg), sizeof(long long int), 1, bin_fp);
+
+    header->num_of_regs = 0;
+    fwrite(&(header->num_of_regs), sizeof(int), 1, bin_fp);
+
+    header->num_of_removeds = 0;
+    fwrite(&(header->num_of_removeds), sizeof(int), 1, bin_fp);
+
+    char **words = get_word_list(header_list);
+    if (words != NULL){
+        header_strings_creation(header->code_description, words[0], 15);
+        fwrite(&(header->code_description), sizeof(char), 15, bin_fp);
+    
+        header_strings_creation(header->card_description, words[1], 13);
+        fwrite(&(header->card_description), sizeof(char), 13, bin_fp);
+    
+        header_strings_creation(header->name_description, words[2], 13);
+        fwrite(&(header->name_description), sizeof(char), 13, bin_fp);
+    
+        header_strings_creation(header->color_description, words[3], 24);
+        fwrite(&(header->color_description), sizeof(char), 24, bin_fp);
+    }
+}
+
+void write_data(FILE *bin_fp, ROUTE *data, ROUTE_HEADER *header){
+    /*  4 bytes(route_code)  + 1 byte(accepts_card) 
+        4 bytes(name_length) + 4 bytes(color_length)
+        color_length         + name_length        */
+    data->register_length = 13 + data->color_length + data->name_length;
+    
+    fwrite(&(data->is_removed), sizeof(char), 1, bin_fp);
+    fwrite(&(data->register_length), sizeof(int), 1, bin_fp);
+    fwrite(&(data->route_code), sizeof(int), 1, bin_fp);
+    fwrite(&(data->accepts_card), sizeof(char), 1, bin_fp);
+
+    fwrite(&(data->name_length), sizeof(int), 1, bin_fp);
+    if (data->name_length != 0)
+        write_data_strings(bin_fp, data->route_name, data->name_length);
+
+    fwrite(&(data->color_length), sizeof(int), 1, bin_fp);
+    if (data->color_length != 0)
+        write_data_strings(bin_fp, data->color, data->color_length);
+
+    if (data->is_removed == '1')
+        header->num_of_regs++;
+}
+
+// Free primary memory after a CSV read
+void free_data(WORDS *word_list, char *reg_line){
+    free_word_list(word_list);
+    free(reg_line);
 }
 
 void create_route_binary(FILE *csv_fp, FILE *bin_fp){
     // Part of the csv with the header
     char *header_line = read_line(csv_fp);
     WORDS *header_list = split_list(header_line, ',');
-    printf("Header: %s\n", header_line);
-    print_word_list(header_list);
 
     ROUTE_HEADER header;
-    create_header(header, header_list);
+    create_header(bin_fp, &header, header_list);
 
     free_word_list(header_list);
     free(header_line);
 
-    printf("%ld\n", ftell(csv_fp));
-
     // Part of the csv with the registers
     while (!feof(csv_fp)){
         char *reg_line = read_line(csv_fp);
+        
+        // Spliting and adding the reg_line of the csv to the binary file
+        WORDS *word_list = split_list(reg_line, ',');
 
-        if (reg_line[0] == '\0')
-            free(reg_line);
-        else {
-            // printf("%s\n", reg_line);
+        // All lines must have 4 fields, otherwise it's EOF
+        if (get_word_list_length(word_list) != 4){
+            free_data(word_list, reg_line);
+            break;
+        }     
 
-            // Spliting and adding the reg_line of the csv to the binary file
-            WORDS *word_list = split_list(reg_line, ',');
-            // print_word_list(word_list);
-            free_word_list(word_list);
-            free(reg_line);
-        }
-    };
+        ROUTE data;
+        char **word = get_word_list(word_list);
+        fill_register(&data, word, &header);
+        write_data(bin_fp, &data, &header);
+
+        free_data(word_list, reg_line);
+    }
 }
 
 /*
