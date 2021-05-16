@@ -40,7 +40,7 @@ struct _VEHICLE{
     Stores header string fields with its respective value (@word), ignoring '\0' and filling with '@'
     If needed, this function can return @word length
     @size is the field size in bytes
-*/
+*/ 
 static void strings_creation(char *header_field, char *word, int size){
     int cur_length = 0;
     for (; word[cur_length] != '\0'; cur_length++) 
@@ -52,7 +52,6 @@ static void strings_creation(char *header_field, char *word, int size){
     size -= 1;
     for (; size > cur_length; size--)
         header_field[size] = '@';
-    
 }
 
 // When writing on bin file,'\0' was being a problem, although we
@@ -197,14 +196,15 @@ static void update_header(FILE *bin_fp, VEHICLE_HEADER *header){
     header->next_reg = ftell(bin_fp);
     
     // Going to the begining of the file to update it's data
-    fseek(bin_fp, 0, SEEK_SET);
+    fseek(bin_fp, 1, SEEK_SET);
 
-    header->status = '1';
-
-    fwrite(&(header->status), sizeof(char), 1, bin_fp);
     fwrite(&(header->next_reg), sizeof(long long int), 1, bin_fp);
     fwrite(&(header->num_of_regs), sizeof(int), 1, bin_fp);
     fwrite(&(header->num_of_removeds), sizeof(int), 1, bin_fp);
+
+    fseek(bin_fp, 0, SEEK_SET);
+    header->status = '1';
+    fwrite(&(header->status), sizeof(char), 1, bin_fp);
 }
 
 void create_vehicle_binary(FILE *csv_fp, FILE *bin_fp){
