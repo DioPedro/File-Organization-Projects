@@ -47,11 +47,12 @@ static void strings_creation(char *header_field, char *word, int size){
         header_field[cur_length] = word[cur_length];
 
     if (cur_length == 0)
-        header_field[cur_length++] = '\0';
-
+        header_field[cur_length] = '\0';
+    
     size -= 1;
     for (; size > cur_length; size--)
         header_field[size] = '@';
+    
 }
 
 // When writing on bin file,'\0' was being a problem, although we
@@ -81,7 +82,7 @@ static bool check_integrity(char *csv_field, VEHICLE_HEADER *header){
 static void fill_register(VEHICLE *data, char **word, VEHICLE_HEADER *header){
     bool is_ok = check_integrity(word[0], header);
     if (!is_ok){
-        strings_creation(data->prefix, "", 5);
+        strcpy(data->prefix, word[0] + 1);
         data->is_removed = '0';
     } else {
         strings_creation(data->prefix, word[0], 5);
