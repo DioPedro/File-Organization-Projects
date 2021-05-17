@@ -16,5 +16,6 @@ typedef struct _ROUTE_HEADER ROUTE_HEADER;
 typedef struct _ROUTE ROUTE;
 
 void create_route_binary(FILE *csv_fp, FILE *bin_fp);
+void read_route_bin(FILE *bin_fp);
 
 #endif

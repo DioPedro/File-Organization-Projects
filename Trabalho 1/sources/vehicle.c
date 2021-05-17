@@ -276,9 +276,10 @@ void read_vehicle_bin(FILE *bin_fp){
         
             print_vehicle_register(&cur_register);
 
-            if (cur_register.model_length != 0) free(cur_register.model);
-            if (cur_register.category_length != 0) free(cur_register.category);
+            if (cur_register.model_length != 0)
+                free(cur_register.model);
+            if (cur_register.category_length != 0)
+                free(cur_register.category);
         }
-
     }
 }

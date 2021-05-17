@@ -90,9 +90,7 @@ bool get_part_from_str(char *source_str, int *source_pos, char **dest_str, char 
             *dest_str = realloc(*dest_str, (dest_pos + 1) * sizeof(char));
             (*dest_str)[dest_pos] = '\0';
             return TRUE;
-        }
-
-        else if (c == delimiter) {
+        } else if (c == delimiter) {
             is_end_of_part = TRUE;
             c = '\0';
         }

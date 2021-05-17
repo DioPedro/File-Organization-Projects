@@ -183,6 +183,88 @@ void create_route_binary(FILE *csv_fp, FILE *bin_fp){
     update_header(bin_fp, &header);
 }
 
+void print_card_option(char option){
+    printf("Aceita cartao: ");
+    
+    if (option == 'S')
+        printf("PAGAMENTO SOMENTE COM CARTAO SEM PRESENCA DE COBRADOR");
+    
+    if (option == 'N')
+        printf("PAGAMENTO EM CARTAO E DINHEIRO");
+
+    if (option == 'F')
+        printf("PAGAMENTO EM CARTAO SOMENTE NO FINAL DE SEMANA");
+    
+    else
+        printf("campo com valor nulo");
+
+    printf("\n");
+}
+
+void print_route_bin(ROUTE *data){
+    printf("Codigo da linha: %d\n", data->route_code);
+
+    printf("Nome da linha: ");
+    if (data->name_length != 0)
+        print_string_without_terminator(data->route_name, data->name_length, TRUE);
+    else
+        printf("campo com valor nulo\n");
+
+    printf("Cor que descreve a linha: ");
+    if (data->color_length != 0)
+        print_string_without_terminator(data->color, data->color_length, TRUE);
+    else
+        printf("campo com valor nulo\n");
+
+    print_card_option(data->accepts_card);
+    
+    printf("\n");
+}
+
+void read_route_bin(FILE *bin_fp){
+    // Going to the start o @number_of_registers in header to read it
+    int num_of_register;
+    fseek(bin_fp, 9, SEEK_SET);
+    fread(&num_of_register, sizeof(int), 1, bin_fp);
+
+    // Jumps to the first register
+    fseek(bin_fp, 69, SEEK_CUR);
+    for (int i = 0; i < num_of_register; i++) {
+        ROUTE cur_register;
+        fread(&cur_register.is_removed, sizeof(char), 1, bin_fp);
+        fread(&cur_register.register_length, sizeof(int), 1, bin_fp);
+
+        bool should_read = (cur_register.is_removed == '1');
+        if (!should_read) {
+            // If register is removed, then it shouldn't be counted as read
+            i--;
+            fseek(bin_fp, cur_register.register_length, SEEK_CUR);
+        } else {
+            fread(&cur_register.route_code, sizeof(int), 1, bin_fp);
+
+            fread(&cur_register.accepts_card, sizeof(char), 1, bin_fp);
+            
+            fread(&cur_register.name_length, sizeof(int), 1, bin_fp);
+            if (cur_register.name_length != 0){
+                cur_register.route_name = malloc(cur_register.name_length * sizeof(char));
+                fread(cur_register.route_name, sizeof(char), cur_register.name_length, bin_fp);
+            } 
+
+            fread(&cur_register.color_length, sizeof(int), 1, bin_fp);
+            if (cur_register.color_length != 0){
+                cur_register.color = malloc(cur_register.color_length * sizeof(char));
+                fread(cur_register.color, sizeof(char), cur_register.color_length, bin_fp);
+            }
+
+            print_route_bin(&cur_register);
+
+            if (cur_register.name_length > 0)
+                free(cur_register.route_name);
+            if (cur_register.color_length > 0)
+                free(cur_register.color);
+        }
+    }
+}
 
 /*
     bool create_bin(FILE *csv, FILE *bin)

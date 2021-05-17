@@ -63,7 +63,8 @@ int main(){
     // create_route_binary(csv_fp, bin_fp);
     // create_vehicle_binary(csv_fp, bin_fp);
     
-    read_vehicle_bin(bin_fp);
+    read_route_bin(bin_fp);
+    // read_vehicle_bin(bin_fp);
 
     // fclose(csv_fp);
     fclose(bin_fp);
