@@ -1,7 +1,7 @@
 CC = gcc
-SOURCES = sources/route.c sources/str.c sources/vehicle.c sources/utils.c
+SOURCES = sources/route.c sources/vehicle.c sources/utils.c
 INCLUDES = ./includes
-BINARY = ./main
+BINARY = ./programaTrab
 PROG = sources/main.c
 FLAGS = -Wall -Werror -g -lm
 PROG_NAME = Trabalho1
@@ -18,3 +18,6 @@ valgrind:
 
 zip:
 	zip -r $(PROG_NAME).zip includes sources main makefile $(DOC)
+
+clean:
+	@rm *.bin $(BINARY)
