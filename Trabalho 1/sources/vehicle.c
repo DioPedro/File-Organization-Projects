@@ -256,7 +256,6 @@ void read_vehicle_bin(FILE *bin_fp){
             fseek(bin_fp, cur_register.register_length, SEEK_CUR);
         } else {
             fread(cur_register.prefix, sizeof(char), 5, bin_fp);
-            print_string_without_terminator(cur_register.prefix, 5, TRUE);
 
             fread(cur_register.date, sizeof(char), 10, bin_fp);
             fread(&cur_register.num_of_seats, sizeof(int), 1, bin_fp);
