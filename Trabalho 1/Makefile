@@ -1,5 +1,5 @@
 CC = gcc
-SOURCES = sources/route.c sources/str.c sources/vehicle.c
+SOURCES = sources/route.c sources/str.c sources/vehicle.c sources/utils.c
 INCLUDES = ./includes
 BINARY = ./main
 PROG = sources/main.c

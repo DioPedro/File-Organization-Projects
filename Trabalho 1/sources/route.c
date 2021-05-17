@@ -32,28 +32,6 @@ struct _ROUTE{
     char *color;
 };
 
-/* 
-    Stores header string fields with its respective value (@word), ignoring '\0' and filling with '@'
-    If needed, this function can return @word length
-    @size is the field size in bytes
-*/
-static void header_strings_creation(char *header_field, char *word, int size){
-    int cur_length = 0;
-    for (; word[cur_length] != '\0'; cur_length++) 
-        header_field[cur_length] = word[cur_length];
-
-    size -= 1;
-    for (; size > cur_length; size--)
-        header_field[size] = '@';
-}
-
-// When writing on bin file, '\0'was being a problem, although we
-// only wrote @size byte 
-static void write_data_strings(FILE *bin_fp, char *data_field, int size){
-    for (int i = 0; i < size; i++)
-        fwrite(&data_field[i], sizeof(char), 1, bin_fp);
-}
-
 static bool check_integrity(char *csv_field, ROUTE_HEADER *header){
     int length = strlen(csv_field);
     if (length == 0) 
@@ -115,16 +93,16 @@ static void create_header(FILE *bin_fp, ROUTE_HEADER *header, WORDS *header_list
 
     char **words = get_word_list(header_list);
     if (words != NULL){
-        header_strings_creation(header->code_description, words[0], 15);
+        strings_creation(header->code_description, words[0], 15);
         fwrite(&(header->code_description), sizeof(char), 15, bin_fp);
     
-        header_strings_creation(header->card_description, words[1], 13);
+        strings_creation(header->card_description, words[1], 13);
         fwrite(&(header->card_description), sizeof(char), 13, bin_fp);
     
-        header_strings_creation(header->name_description, words[2], 13);
+        strings_creation(header->name_description, words[2], 13);
         fwrite(&(header->name_description), sizeof(char), 13, bin_fp);
     
-        header_strings_creation(header->color_description, words[3], 24);
+        strings_creation(header->color_description, words[3], 24);
         fwrite(&(header->color_description), sizeof(char), 24, bin_fp);
     }
 }
@@ -154,24 +132,19 @@ static void write_data(FILE *bin_fp, ROUTE *data, ROUTE_HEADER *header){
         header->num_of_regs++;
 }
 
-// Free primary memory after a CSV read
-static void free_data(WORDS *word_list, char *reg_line){
-    free_word_list(word_list);
-    free(reg_line);
-}
-
 static void update_header(FILE *bin_fp, ROUTE_HEADER *header){
     header->next_reg = ftell(bin_fp);
     
     // Going to the begining of the file to update it's data
-    fseek(bin_fp, 0, SEEK_SET);
+    fseek(bin_fp, 1, SEEK_SET);
 
-    header->status = '1';
-
-    fwrite(&(header->status), sizeof(char), 1, bin_fp);
     fwrite(&(header->next_reg), sizeof(long long int), 1, bin_fp);
     fwrite(&(header->num_of_regs), sizeof(int), 1, bin_fp);
     fwrite(&(header->num_of_removeds), sizeof(int), 1, bin_fp);
+
+    fseek(bin_fp, 0, SEEK_SET);
+    header->status = '1';
+    fwrite(&(header->status), sizeof(char), 1, bin_fp);
 }
 
 void create_route_binary(FILE *csv_fp, FILE *bin_fp){

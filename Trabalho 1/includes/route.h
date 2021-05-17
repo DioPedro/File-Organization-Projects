@@ -10,10 +10,7 @@
 #ifndef ROUTES_H
 #define ROUTES_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "str.h"
+#include "utils.h"
 
 typedef struct _ROUTE_HEADER ROUTE_HEADER;
 typedef struct _ROUTE ROUTE;
