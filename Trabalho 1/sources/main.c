@@ -54,7 +54,7 @@ int main(){
     //     return 0;
     // }
 
-    FILE *bin_fp = fopen(bin_name, "wb");
+    FILE *bin_fp = fopen(bin_name, "rb");
     if (bin_fp == NULL){
         printf("Deu ruim no binário\n");
         return 0;
