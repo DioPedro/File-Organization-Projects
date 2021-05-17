@@ -212,7 +212,7 @@ void create_vehicle_binary(FILE *csv_fp, FILE *bin_fp){
 }
 
 void print_vehicle_register(VEHICLE *data){
-    printf("Prefixo do veículo: %.5s", data->prefix);
+    printf("Prefixo do veículo: %.5s\n", data->prefix);
     
     printf("Modelo do veículo: ");
     if (data->model_length != 0)
@@ -229,10 +229,11 @@ void print_vehicle_register(VEHICLE *data){
     print_date(data->date);
 
     if (data->num_of_seats != -1)
-        printf("Quantidade de lugares: %d", data->num_of_seats);
+        printf("Quantidade de lugares: %d\n", data->num_of_seats);
     else
         printf("campo com valor nulo\n");
 
+    printf("\n");
 }
 
 void read_vehicle_bin(FILE *bin_fp){
@@ -248,26 +249,36 @@ void read_vehicle_bin(FILE *bin_fp){
         fread(&cur_register.is_removed, sizeof(char), 1, bin_fp);
         fread(&cur_register.register_length, sizeof(int), 1, bin_fp);
 
-        bool should_read = (cur_register.is_removed == '0');
+        bool should_read = (cur_register.is_removed == '1');
         if (!should_read) {
             // If register is removed, then it shouldn't be counted as read
             i--;
             fseek(bin_fp, cur_register.register_length, SEEK_CUR);
         } else {
             fread(cur_register.prefix, sizeof(char), 5, bin_fp);
+            print_string_without_terminator(cur_register.prefix, 5, TRUE);
+
             fread(cur_register.date, sizeof(char), 10, bin_fp);
             fread(&cur_register.num_of_seats, sizeof(int), 1, bin_fp);
             fread(&cur_register.route_code, sizeof(int), 1, bin_fp);
             
             fread(&cur_register.model_length, sizeof(int), 1, bin_fp);
-            if (cur_register.model_length != 0)
+            if (cur_register.model_length != 0){
+                cur_register.model = malloc(cur_register.model_length * sizeof(char));
                 fread(cur_register.model, sizeof(char), cur_register.model_length, bin_fp);
-            
+            }
+
             fread(&cur_register.category_length, sizeof(int), 1, bin_fp);
-            if (cur_register.category_length != 0)
+            if (cur_register.category_length != 0) {
+                cur_register.category = malloc(cur_register.category_length * sizeof(char));
                 fread(cur_register.category, sizeof(char), cur_register.category_length, bin_fp);
+            }
+        
+            print_vehicle_register(&cur_register);
+
+            if (cur_register.model_length != 0) free(cur_register.model);
+            if (cur_register.category_length != 0) free(cur_register.category);
         }
 
-        print_vehicle_register(&cur_register);
     }
 }
