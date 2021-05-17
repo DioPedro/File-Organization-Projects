@@ -212,15 +212,15 @@ void create_vehicle_binary(FILE *csv_fp, FILE *bin_fp){
 }
 
 void print_vehicle_register(VEHICLE *data){
-    printf("Prefixo do veículo: %.5s\n", data->prefix);
+    printf("Prefixo do veiculo: %.5s\n", data->prefix);
     
-    printf("Modelo do veículo: ");
+    printf("Modelo do veiculo: ");
     if (data->model_length != 0)
         print_string_without_terminator(data->model, data->model_length, TRUE);
     else    
         printf("campo com valor nulo\n");
 
-    printf("Categoria do veículo: ");
+    printf("Categoria do veiculo: ");
     if (data->category_length != 0)
         print_string_without_terminator(data->category, data->category_length, TRUE);
     else
@@ -228,8 +228,9 @@ void print_vehicle_register(VEHICLE *data){
 
     print_date(data->date);
 
+    printf("Quantidade de lugares sentados disponiveis: ");
     if (data->num_of_seats != -1)
-        printf("Quantidade de lugares: %d\n", data->num_of_seats);
+        printf("%d\n", data->num_of_seats);
     else
         printf("campo com valor nulo\n");
 

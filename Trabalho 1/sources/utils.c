@@ -244,10 +244,12 @@ void print_month_name(MONTH month){
 }
 
 void print_date(char *date){
+    printf("Data de entrada do veiculo na frota: ");
     if (date[0] == '\0'){
-        printf("campo de valor nulo\n");
+        printf("campo com valor nulo\n");
         return;
     }
+
     // YEAR-MO-DA
     //         ^ date[8:9] = "DA" (day)
     //      ^ date[5:6] = "MO" (month)
@@ -255,7 +257,6 @@ void print_date(char *date){
     char month[3] = "";
     strncpy(month, &date[5], 2);
 
-    printf("Data de entrada do veiculona frota: ");
     print_string_without_terminator(&date[8], 2, FALSE);
     printf(" de ");
     print_month_name(atoi(month));
