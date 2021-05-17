@@ -210,3 +210,64 @@ void create_vehicle_binary(FILE *csv_fp, FILE *bin_fp){
 
     update_header(bin_fp, &header);
 }
+
+void print_vehicle_register(VEHICLE *data){
+    printf("Prefixo do veículo: %.5s", data->prefix);
+    
+    printf("Modelo do veículo: ");
+    if (data->model_length != 0)
+        print_string_without_terminator(data->model, data->model_length, TRUE);
+    else    
+        printf("campo com valor nulo\n");
+
+    printf("Categoria do veículo: ");
+    if (data->category_length != 0)
+        print_string_without_terminator(data->category, data->category_length, TRUE);
+    else
+        printf("campo com valor nulo\n");
+
+    print_date(data->date);
+
+    if (data->num_of_seats != -1)
+        printf("Quantidade de lugares: %d", data->num_of_seats);
+    else
+        printf("campo com valor nulo\n");
+
+}
+
+void read_vehicle_bin(FILE *bin_fp){
+    // Going to the start o @number_of_registers in header to read it
+    int num_of_register;
+    fseek(bin_fp, 9, SEEK_SET);
+    fread(&num_of_register, sizeof(int), 1, bin_fp);
+
+    // Jumps to the first register
+    fseek(bin_fp, 162, SEEK_CUR);
+    for (int i = 0; i < num_of_register; i++) {
+        VEHICLE cur_register;
+        fread(&cur_register.is_removed, sizeof(char), 1, bin_fp);
+        fread(&cur_register.register_length, sizeof(int), 1, bin_fp);
+
+        bool should_read = (cur_register.is_removed == '0');
+        if (!should_read) {
+            // If register is removed, then it shouldn't be counted as read
+            i--;
+            fseek(bin_fp, cur_register.register_length, SEEK_CUR);
+        } else {
+            fread(cur_register.prefix, sizeof(char), 5, bin_fp);
+            fread(cur_register.date, sizeof(char), 10, bin_fp);
+            fread(&cur_register.num_of_seats, sizeof(int), 1, bin_fp);
+            fread(&cur_register.route_code, sizeof(int), 1, bin_fp);
+            
+            fread(&cur_register.model_length, sizeof(int), 1, bin_fp);
+            if (cur_register.model_length != 0)
+                fread(cur_register.model, sizeof(char), cur_register.model_length, bin_fp);
+            
+            fread(&cur_register.category_length, sizeof(int), 1, bin_fp);
+            if (cur_register.category_length != 0)
+                fread(cur_register.category, sizeof(char), cur_register.category_length, bin_fp);
+        }
+
+        print_vehicle_register(&cur_register);
+    }
+}

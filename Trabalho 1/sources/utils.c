@@ -150,6 +150,14 @@ void print_word_list(WORDS *word_list){
     printf("\n");
 }
 
+void print_string_without_terminator(char *string, int len, bool has_endl){
+    for (int i = 0; i < len; i++)
+        printf("%c", string[i]);
+
+    if (has_endl)
+        printf("\n");
+}
+
 void free_word_list(WORDS *word_list){
     if (word_list == NULL)
         return;
@@ -163,11 +171,9 @@ void free_word_list(WORDS *word_list){
 
 /* ------ General Utils ------ */
 
-/* 
-    Stores header string fields with its respective value (@word), ignoring '\0' and filling with '@'
-    If needed, this function can return @word length
-    @size is the field size in bytes
-*/
+// Stores header string fields with its respective value (@word), ignoring '\0' and filling with '@'
+// If needed, this function can return @word length
+// @size is the field size in bytes
 void strings_creation(char *reg_field, char *word, int size){
     int cur_length = 0;
     for (; word[cur_length] != '\0'; cur_length++) 
@@ -192,4 +198,66 @@ void write_data_strings(FILE *bin_fp, char *data_field, int size){
 void free_data(WORDS *word_list, char *reg_line){
     free_word_list(word_list);
     free(reg_line);
+}
+
+void print_month_name(MONTH month){
+    switch (month){
+        case Janeiro:
+            printf("janeiro");
+            break;
+        case Fevereiro:
+            printf("fevereiro");
+            break;
+        case Marco:
+            printf("março");
+            break;
+        case Abril:
+            printf("abril");
+            break;
+        case Maio:
+            printf("maio");
+            break;
+        case Junho:
+            printf("junho");
+            break;
+        case Julho:
+            printf("julho");
+            break;
+        case Agosto:
+            printf("agosto");
+            break;
+        case Setembro:
+            printf("setembro");
+            break;
+        case Outubro:
+            printf("outubro");
+            break;
+        case Novembro:
+            printf("novembro");
+            break;
+        case Dezembro:
+            printf("dezembro");
+            break;
+        default:
+            break;
+    }
+}
+
+void print_date(char *date){
+    if (date[0] == '\0'){
+        printf("campo de valor nulo\n");
+        return;
+    }
+    // YEAR-MO-DA
+    //         ^ date[8:9] = "DA" (day)
+    //      ^ date[5:6] = "MO" (month)
+    // ^ date[0:3] = "YEAR" (year)
+    char month[3];
+    strncpy(month, &date[5], 2);
+
+    print_string_without_terminator(&date[8], 2, FALSE);
+    printf(" de ");
+    print_month_name(atoi(month));
+    printf(" de ");
+    print_string_without_terminator(&date[0], 4, TRUE);
 }

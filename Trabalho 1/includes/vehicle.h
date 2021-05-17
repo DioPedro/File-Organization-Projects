@@ -16,5 +16,6 @@ typedef struct _VEHICLE_HEADER VEHICLE_HEADER;
 typedef struct _VEHICLE VEHICLE;
 
 void create_vehicle_binary(FILE *csv_fp, FILE *bin_fp);
+void read_vehicle_bin(FILE *bin_fp);
 
 #endif

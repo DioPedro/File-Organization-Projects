@@ -21,7 +21,7 @@ void binarioNaTela(char *nomeArquivoBinario) { /* Você não precisa entender o 
 	size_t fl;
 	FILE *fs;
 	if(nomeArquivoBinario == NULL || !(fs = fopen(nomeArquivoBinario, "rb"))) {
-		fprintf(stderr, "ERRO AO ESCREVER O BINARIO NA TELA (função binarioNaTela): não foi possível abrir o arquivo que me passou para leitura. Ele existe e você tá passando o nome certo? Você lembrou de fechar ele com fclose depois de usar?\n");
+		fprintf(stderr, "Falha no processamentodo arquivo.\n");
 		return;
 	}
 	fseek(fs, 0, SEEK_END);
@@ -40,19 +40,19 @@ void binarioNaTela(char *nomeArquivoBinario) { /* Você não precisa entender o 
 }
 
 int main(){
-    char *op = read_word(stdin);
-    int operation = atoi(op);
-    free(op);
-    char *csv_name = read_word(stdin);
+    // char *op = read_word(stdin);
+    // int operation = atoi(op);
+    // free(op);
+    // char *csv_name = read_word(stdin);
     char *bin_name = read_word(stdin);
 
-    printf("%d %s %s\n", operation, csv_name, bin_name);
+    // printf("%d %s %s\n", operation, csv_name, bin_name);
 
-    FILE *csv_fp = fopen(csv_name, "r");    
-    if (csv_fp == NULL){
-        printf("Deu ruim no csv\n");
-        return 0;
-    }
+    // FILE *csv_fp = fopen(csv_name, "r");    
+    // if (csv_fp == NULL){
+    //     printf("Deu ruim no csv\n");
+    //     return 0;
+    // }
 
     FILE *bin_fp = fopen(bin_name, "wb");
     if (bin_fp == NULL){
@@ -60,16 +60,18 @@ int main(){
         return 0;
     }
     
-    create_route_binary(csv_fp, bin_fp);
+    // create_route_binary(csv_fp, bin_fp);
     // create_vehicle_binary(csv_fp, bin_fp);
+    
+    read_vehicle_bin(bin_fp);
 
-    fclose(csv_fp);
+    // fclose(csv_fp);
     fclose(bin_fp);
 
-    binarioNaTela(bin_name);
-    binarioNaTela("./CasosT/Binary Files/veiculo1_saida_esperada.bin");
+    // binarioNaTela(bin_name);
+    // binarioNaTela("./CasosT/Binary Files/veiculo1_saida_esperada.bin");
 
-    free(csv_name);
+    // free(csv_name);
     free(bin_name);
 
     return 0;

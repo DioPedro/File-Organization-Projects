@@ -183,6 +183,7 @@ void create_route_binary(FILE *csv_fp, FILE *bin_fp){
     update_header(bin_fp, &header);
 }
 
+
 /*
     bool create_bin(FILE *csv, FILE *bin)
         Verifica se o arquivo já está em uso
