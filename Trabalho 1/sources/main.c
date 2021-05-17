@@ -7,7 +7,7 @@
 **************************************************
 */
 
-#include "../includes/str.h"
+#include "../includes/utils.h"
 #include "../includes/route.h"
 #include "../includes/vehicle.h"
 
@@ -60,8 +60,8 @@ int main(){
         return 0;
     }
     
-    // create_route_binary(csv_fp, bin_fp);
-    create_vehicle_binary(csv_fp, bin_fp);
+    create_route_binary(csv_fp, bin_fp);
+    // create_vehicle_binary(csv_fp, bin_fp);
 
     fclose(csv_fp);
     fclose(bin_fp);
