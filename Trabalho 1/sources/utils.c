@@ -252,9 +252,10 @@ void print_date(char *date){
     //         ^ date[8:9] = "DA" (day)
     //      ^ date[5:6] = "MO" (month)
     // ^ date[0:3] = "YEAR" (year)
-    char month[3];
+    char month[3] = "";
     strncpy(month, &date[5], 2);
 
+    printf("Data de entrada do veiculona frota: ");
     print_string_without_terminator(&date[8], 2, FALSE);
     printf(" de ");
     print_month_name(atoi(month));
