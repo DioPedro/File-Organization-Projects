@@ -4,17 +4,17 @@
     If needed, this function can return @word length
     @size is the field size in bytes
 */
-void strings_creation(char *header_field, char *word, int size){
+void strings_creation(char *reg_field, char *word, int size){
     int cur_length = 0;
     for (; word[cur_length] != '\0'; cur_length++) 
-        header_field[cur_length] = word[cur_length];
+        reg_field[cur_length] = word[cur_length];
 
     if (cur_length == 0)
-        header_field[cur_length] = '\0';
+        reg_field[cur_length] = '\0';
 
     size -= 1;
     for (; size > cur_length; size--)
-        header_field[size] = '@';
+        reg_field[size] = '@';
 }
 
 // When writing on bin file, '\0'was being a problem, although we
