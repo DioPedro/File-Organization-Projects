@@ -9,6 +9,15 @@
 
 #include "../includes/vehicle.h"
 
+enum _VEHICLE_FIELD{
+    Prefix,
+    Date,
+    Num_of_seats,
+    Model,
+    Category, 
+    Doesnt_exist
+};
+
 struct _VEHICLE_HEADER{
     char status;
     long long int next_reg;
@@ -211,6 +220,13 @@ void create_vehicle_binary(FILE *csv_fp, FILE *bin_fp){
     update_header(bin_fp, &header);
 }
 
+void free_dynamic_fields(VEHICLE *data){
+    if (data->model_length != 0)
+        free(data->model);
+    if (data->category_length != 0)
+        free(data->category);
+}
+
 void print_vehicle_register(VEHICLE *data){
     printf("Prefixo do veiculo: %.5s\n", data->prefix);
     
@@ -276,10 +292,170 @@ void read_vehicle_bin(FILE *bin_fp){
         
             print_vehicle_register(&cur_register);
 
-            if (cur_register.model_length != 0)
-                free(cur_register.model);
-            if (cur_register.category_length != 0)
-                free(cur_register.category);
+            free_dynamic_fields(&cur_register);
+        }
+    }
+}
+
+VEHICLE_FIELD get_field(char *field) {
+    if (strcmp(field, "prefixo") == 0)
+        return Prefix;
+    
+    if (strcmp(field, "data") == 0)
+        return Date;
+    
+    if (strcmp(field, "quantidadeLugares") == 0)
+        return Num_of_seats;
+    
+    if (strcmp(field, "modelo") == 0)
+        return Model;
+    
+    if (strcmp(field, "categoria") == 0)
+        return Category;
+    
+    return Doesnt_exist;
+}
+
+void read_until_field(FILE *bin_fp, VEHICLE_FIELD which_field) {
+
+    for (int i = 0; i < which_field; i++){
+        if (i == Prefix)
+            fseek(bin_fp, 5, SEEK_CUR);
+
+        if (i == Date)
+            fseek(bin_fp, 10, SEEK_CUR);
+        
+        if (i == Num_of_seats)
+            fseek(bin_fp, 8, SEEK_CUR);
+
+        int size;
+        if (i == Model) {
+            fread(&size, sizeof(int), 1, bin_fp);
+            fseek(bin_fp, size, SEEK_CUR);
+        }
+    }
+}
+
+bool compare_strings_whithout_terminator(char *stringA, char *stringB, int size) {
+    for (int i = 0; i < size; i++) {
+        if (stringA[i] != stringB[i])
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+void read_vehicle_register(FILE *bin_fp, VEHICLE *valid_register){
+    fread(&valid_register->is_removed, sizeof(char), 1, bin_fp);
+    fread(&valid_register->register_length, sizeof(int), 1, bin_fp);
+    fread(valid_register->prefix, sizeof(char), 5, bin_fp);
+    fread(valid_register->date, sizeof(char), 10, bin_fp);
+    fread(&valid_register->num_of_seats, sizeof(int), 1, bin_fp);
+    fread(&valid_register->route_code, sizeof(int), 1, bin_fp);
+    
+    fread(&valid_register->model_length, sizeof(int), 1, bin_fp);
+    if (valid_register->model_length > 0){
+        valid_register->model = malloc(valid_register->model_length * sizeof(char));
+        fread(valid_register->model, sizeof(char), valid_register->model_length, bin_fp);
+    }
+
+    fread(&valid_register->category_length, sizeof(int), 1, bin_fp);
+    if (valid_register->category_length > 0){
+        valid_register->category = malloc(valid_register->category_length * sizeof(char));
+        fread(valid_register->category, sizeof(char), valid_register->category_length, bin_fp);
+    }
+}
+
+void go_to_end_of_register(FILE *bin_fp, long long start_of_register, int reg_len){
+    // @reg_len + 5 = total register size
+    // @cur_offset - @start_of_register = how much we went through the register
+    // left to end of register = total register size - how much we went through the register
+    long long int cur_offset = ftell(bin_fp);
+    long long int next_reg_offset = reg_len + 5 - (cur_offset - start_of_register);
+    fseek(bin_fp, next_reg_offset, SEEK_CUR);
+}
+
+void search_by_field(FILE *bin_fp, char *field, char *value){
+    VEHICLE_FIELD which_field = get_field(field);
+    if (which_field == Doesnt_exist){
+        printf("Registro inexistente.\n");
+        return;
+    }
+
+    VEHICLE_HEADER header;
+    fread(&header.status, sizeof(char), 1, bin_fp);
+    
+    fseek(bin_fp, 8, SEEK_CUR);
+    fread(&header.num_of_regs, sizeof(int), 1, bin_fp);
+
+    fseek(bin_fp, 162, SEEK_CUR);
+    for (int i = 0; i < header.num_of_regs; i++){
+        // Storing start of register to return later 
+        long long int start_of_register = ftell(bin_fp); 
+
+        if (!register_exists(bin_fp)){
+            int reg_len;
+            fread(&reg_len, sizeof(int), 1, bin_fp);
+            fseek(bin_fp, reg_len, SEEK_CUR);
+            
+            // If register doesn't exist, it shouldn't be counted
+            i--;
+            continue;
+        }
+        
+        int reg_len;
+        fread(&reg_len, sizeof(int), 1, bin_fp);
+
+        read_until_field(bin_fp, which_field);
+        bool are_equal = FALSE;
+        if (which_field == Model || which_field == Category){
+            int field_size;
+            fread(&field_size, sizeof(int), 1, bin_fp);
+            
+            char *content = malloc(field_size * sizeof(char));
+            fread(content, sizeof(char), field_size, bin_fp);
+
+            are_equal = compare_strings_whithout_terminator(value, content, field_size);
+            if (!are_equal){
+                go_to_end_of_register(bin_fp, start_of_register, reg_len);
+            }
+
+            free(content);
+        } else {
+            switch (which_field){
+                char prefix[5];
+                case Prefix:
+                    fread(prefix, sizeof(char), 5, bin_fp);
+                    are_equal = compare_strings_whithout_terminator(prefix, value, 5);
+                    break;
+                
+                char date[10];
+                case Date:
+                    fread(prefix, sizeof(char), 10, bin_fp);
+                    are_equal = compare_strings_whithout_terminator(date, value, 10);
+                    break;
+
+                int num_of_seats;
+                case Num_of_seats:
+                    fread(&num_of_seats, sizeof(int), 1, bin_fp);
+                    are_equal = (num_of_seats == atoi(value));
+                    break;
+                
+                default:
+                    break;
+            }
+
+            if (!are_equal){
+                go_to_end_of_register(bin_fp, start_of_register, reg_len);
+            } else {
+                
+                fseek(bin_fp, start_of_register, SEEK_SET);
+                VEHICLE valid_register;
+                read_vehicle_register(bin_fp, &valid_register);
+                print_vehicle_register(&valid_register);
+
+                free_dynamic_fields(&valid_register);
+            }
         }
     }
 }

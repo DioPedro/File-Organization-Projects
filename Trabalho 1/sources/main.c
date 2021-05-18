@@ -62,9 +62,17 @@ int main(){
     
     // create_route_binary(csv_fp, bin_fp);
     // create_vehicle_binary(csv_fp, bin_fp);
-    
-    read_route_bin(bin_fp);
+    char field[100], value[30];
+    scanf("%s %s", field, value);
+
+    // int len;
+    // char *value = read_inside_quotes(&len);
+    search_by_field(bin_fp, field, value);
+    // read_route_bin(bin_fp);
     // read_vehicle_bin(bin_fp);
+
+    /* Falta arrumar a funcao de ler valor */
+
 
     // fclose(csv_fp);
     fclose(bin_fp);
