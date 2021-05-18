@@ -220,11 +220,75 @@ void create_vehicle_binary(FILE *csv_fp, FILE *bin_fp){
     update_header(bin_fp, &header);
 }
 
-void free_dynamic_fields(VEHICLE *data){
+static void free_dynamic_fields(VEHICLE *data){
     if (data->model_length != 0)
         free(data->model);
     if (data->category_length != 0)
         free(data->category);
+}
+
+void print_month_name(MONTH month){
+    switch (month){
+        case Janeiro:
+            printf("janeiro");
+            break;
+        case Fevereiro:
+            printf("fevereiro");
+            break;
+        case Marco:
+            printf("março");
+            break;
+        case Abril:
+            printf("abril");
+            break;
+        case Maio:
+            printf("maio");
+            break;
+        case Junho:
+            printf("junho");
+            break;
+        case Julho:
+            printf("julho");
+            break;
+        case Agosto:
+            printf("agosto");
+            break;
+        case Setembro:
+            printf("setembro");
+            break;
+        case Outubro:
+            printf("outubro");
+            break;
+        case Novembro:
+            printf("novembro");
+            break;
+        case Dezembro:
+            printf("dezembro");
+            break;
+        default:
+            break;
+    }
+}
+
+void print_date(char *date){
+    printf("Data de entrada do veiculo na frota: ");
+    if (date[0] == '\0'){
+        printf("campo com valor nulo\n");
+        return;
+    }
+
+    // YEAR-MO-DA
+    //         ^ date[8:9] = "DA" (day)
+    //      ^ date[5:6] = "MO" (month)
+    // ^ date[0:3] = "YEAR" (year)
+    char month[3] = "";
+    strncpy(month, &date[5], 2);
+
+    print_string_without_terminator(&date[8], 2, FALSE);
+    printf(" de ");
+    print_month_name(atoi(month));
+    printf(" de ");
+    print_string_without_terminator(&date[0], 4, TRUE);
 }
 
 void print_vehicle_register(VEHICLE *data){
@@ -297,7 +361,7 @@ void read_vehicle_bin(FILE *bin_fp){
     }
 }
 
-VEHICLE_FIELD get_field(char *field) {
+static VEHICLE_FIELD get_field(char *field) {
     if (strcmp(field, "prefixo") == 0)
         return Prefix;
     
@@ -316,8 +380,7 @@ VEHICLE_FIELD get_field(char *field) {
     return Doesnt_exist;
 }
 
-void read_until_field(FILE *bin_fp, VEHICLE_FIELD which_field) {
-
+static void read_until_field(FILE *bin_fp, VEHICLE_FIELD which_field) {
     for (int i = 0; i < which_field; i++){
         if (i == Prefix)
             fseek(bin_fp, 5, SEEK_CUR);
@@ -334,15 +397,6 @@ void read_until_field(FILE *bin_fp, VEHICLE_FIELD which_field) {
             fseek(bin_fp, size, SEEK_CUR);
         }
     }
-}
-
-bool compare_strings_whithout_terminator(char *stringA, char *stringB, int size) {
-    for (int i = 0; i < size; i++) {
-        if (stringA[i] != stringB[i])
-            return FALSE;
-    }
-
-    return TRUE;
 }
 
 void read_vehicle_register(FILE *bin_fp, VEHICLE *valid_register){
@@ -366,16 +420,7 @@ void read_vehicle_register(FILE *bin_fp, VEHICLE *valid_register){
     }
 }
 
-void go_to_end_of_register(FILE *bin_fp, long long start_of_register, int reg_len){
-    // @reg_len + 5 = total register size
-    // @cur_offset - @start_of_register = how much we went through the register
-    // left to end of register = total register size - how much we went through the register
-    long long int cur_offset = ftell(bin_fp);
-    long long int next_reg_offset = reg_len + 5 - (cur_offset - start_of_register);
-    fseek(bin_fp, next_reg_offset, SEEK_CUR);
-}
-
-void search_by_field(FILE *bin_fp, char *field, char *value){
+void search_vehicle_by_field(FILE *bin_fp, char *field, char *value){
     VEHICLE_FIELD which_field = get_field(field);
     if (which_field == Doesnt_exist){
         printf("Registro inexistente.\n");

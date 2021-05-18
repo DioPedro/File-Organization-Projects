@@ -45,6 +45,7 @@ int main(){
     // free(op);
     // char *csv_name = read_word(stdin);
     char *bin_name = read_word(stdin);
+    printf("%s\n", bin_name);
 
     // printf("%d %s %s\n", operation, csv_name, bin_name);
 
@@ -67,7 +68,8 @@ int main(){
 
     // int len;
     // char *value = read_inside_quotes(&len);
-    search_by_field(bin_fp, field, value);
+    search_route_by_field(bin_fp, field, value);
+    // search_vehicle_by_field(bin_fp, field, value);
     // read_route_bin(bin_fp);
     // read_vehicle_bin(bin_fp);
 

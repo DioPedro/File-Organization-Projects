@@ -9,6 +9,14 @@
 
 #include "../includes/route.h"
 
+enum _ROUTE_FIELD{
+    Route_code,
+    Accepts_card,
+    Route_name,
+    Color,
+    Doesnt_exist
+};
+
 struct _ROUTE_HEADER{
     char status;
     long long int next_reg;
@@ -186,22 +194,28 @@ void create_route_binary(FILE *csv_fp, FILE *bin_fp){
 void print_card_option(char option){
     printf("Aceita cartao: ");
     
-    if (option == 'S')
-        printf("PAGAMENTO SOMENTE COM CARTAO SEM PRESENCA DE COBRADOR");
+    if (option == 'S') {
+        printf("PAGAMENTO SOMENTE COM CARTAO SEM PRESENCA DE COBRADOR\n");
+        return;
+    }
     
-    if (option == 'N')
-        printf("PAGAMENTO EM CARTAO E DINHEIRO");
+    if (option == 'N') {
+        printf("PAGAMENTO EM CARTAO E DINHEIRO\n");
+        return;
+    }
 
-    if (option == 'F')
-        printf("PAGAMENTO EM CARTAO SOMENTE NO FINAL DE SEMANA");
+    if (option == 'F') {
+        printf("PAGAMENTO EM CARTAO SOMENTE NO FINAL DE SEMANA\n");
+        return;
+    }
     
-    else
-        printf("campo com valor nulo");
-
-    printf("\n");
+    else {
+        printf("campo com valor nulo\n");
+        return;
+    }
 }
 
-void print_route_bin(ROUTE *data){
+void print_route_register(ROUTE *data){
     printf("Codigo da linha: %d\n", data->route_code);
 
     printf("Nome da linha: ");
@@ -219,6 +233,13 @@ void print_route_bin(ROUTE *data){
     print_card_option(data->accepts_card);
     
     printf("\n");
+}
+
+static void free_dynamic_fields(ROUTE *data){
+    if (data->name_length != 0)
+        free(data->route_name);
+    if (data->color_length != 0)
+        free(data->color);
 }
 
 void read_route_bin(FILE *bin_fp){
@@ -256,12 +277,141 @@ void read_route_bin(FILE *bin_fp){
                 fread(cur_register.color, sizeof(char), cur_register.color_length, bin_fp);
             }
 
-            print_route_bin(&cur_register);
+            print_route_register(&cur_register);
 
             if (cur_register.name_length > 0)
                 free(cur_register.route_name);
             if (cur_register.color_length > 0)
                 free(cur_register.color);
+        }
+    }
+}
+
+static ROUTE_FIELD get_field(char *field) {
+    if (strcmp(field, "codLinha") == 0)
+        return Route_code;
+    
+    if (strcmp(field, "aceitaCartao") == 0)
+        return Accepts_card;
+    
+    if (strcmp(field, "nomeLinha") == 0)
+        return Route_name;
+    
+    if (strcmp(field, "corLinha") == 0)
+        return Color;
+    
+    return Doesnt_exist;
+}
+
+static void read_until_field(FILE *bin_fp, ROUTE_FIELD which_field) {
+    for (int i = 0; i < which_field; i++){
+        if (i == Route_code)
+            fseek(bin_fp, 4, SEEK_CUR);
+
+        if (i == Accepts_card)
+            fseek(bin_fp, 1, SEEK_CUR);
+
+        int size;
+        if (i == Route_name){
+            fread(&size, sizeof(int), 1, bin_fp);
+            fseek(bin_fp, size, SEEK_CUR);
+        }
+    }
+}
+
+void read_route_register(FILE *bin_fp, ROUTE *valid_register){
+    fread(&valid_register->is_removed, sizeof(char), 1, bin_fp);
+    fread(&valid_register->register_length, sizeof(int), 1, bin_fp);
+    fread(&valid_register->route_code, sizeof(int), 1, bin_fp);
+    fread(&valid_register->accepts_card, sizeof(char), 1, bin_fp);
+
+    fread(&valid_register->name_length, sizeof(int), 1, bin_fp);
+    if (valid_register->name_length != 0){
+        valid_register->route_name = malloc(valid_register->name_length * sizeof(char));
+        fread(valid_register->route_name, sizeof(char), valid_register->name_length, bin_fp);
+    }
+
+    fread(&valid_register->color_length, sizeof(int), 1, bin_fp);
+    if (valid_register->color_length != 0){
+        valid_register->color = malloc(valid_register->color_length * sizeof(char));
+        fread(valid_register->color, sizeof(char), valid_register->color_length, bin_fp);
+    }
+}
+
+void search_route_by_field(FILE *bin_fp, char *field, char *value){
+    ROUTE_FIELD which_field = get_field(field);
+    if (which_field == Doesnt_exist){
+        printf("Registro inexistente.\n");
+        return;
+    }
+
+    ROUTE_HEADER header;
+    fread(&header.status, sizeof(char), 1, bin_fp);
+    
+    fseek(bin_fp, 8, SEEK_CUR);
+    fread(&header.num_of_regs, sizeof(int), 1, bin_fp);
+
+    fseek(bin_fp, 69, SEEK_CUR);
+    for (int i = 0; i < header.num_of_regs; i++){
+        // Storing start of register to return later 
+        long long int start_of_register = ftell(bin_fp); 
+
+        if (!register_exists(bin_fp)){
+            int reg_len;
+            fread(&reg_len, sizeof(int), 1, bin_fp);
+            fseek(bin_fp, reg_len, SEEK_CUR);
+            
+            // If register doesn't exist, it shouldn't be counted
+            i--;
+            continue;
+        }
+        
+        int reg_len;
+        fread(&reg_len, sizeof(int), 1, bin_fp);
+
+        read_until_field(bin_fp, which_field);
+        bool are_equal = FALSE;
+        if (which_field == Route_name || which_field == Color){
+            int field_size;
+            fread(&field_size, sizeof(int), 1, bin_fp);
+            
+            char *content = malloc(field_size * sizeof(char));
+            fread(content, sizeof(char), field_size, bin_fp);
+
+            are_equal = compare_strings_whithout_terminator(value, content, field_size);
+            if (!are_equal){
+                go_to_end_of_register(bin_fp, start_of_register, reg_len);
+            }
+
+            free(content);
+        } else {
+            switch (which_field){
+                int route_code;
+                case Route_code:
+                    fread(&route_code, sizeof(int), 1, bin_fp);
+                    are_equal = (route_code == atoi(value));
+                    break;
+
+                char accepts_card;
+                case Accepts_card:
+                    fread(&accepts_card, sizeof(char), 1, bin_fp);
+                    are_equal = compare_strings_whithout_terminator(&accepts_card, value, 1);
+                    break;
+
+                default:
+                    break;
+            }
+
+            if (!are_equal){
+                go_to_end_of_register(bin_fp, start_of_register, reg_len);
+            } else {
+                fseek(bin_fp, start_of_register, SEEK_SET);
+                ROUTE valid_register;
+                read_route_register(bin_fp, &valid_register);
+                print_route_register(&valid_register);
+
+                free_dynamic_fields(&valid_register);
+            }
         }
     }
 }

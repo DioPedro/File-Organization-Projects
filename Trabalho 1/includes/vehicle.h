@@ -11,13 +11,13 @@
 #define VEHICLES_H
 
 #include "utils.h"
-typedef enum _VEHICLE_FIELD VEHICLE_FIELD;
 
+typedef enum _VEHICLE_FIELD VEHICLE_FIELD;
 typedef struct _VEHICLE_HEADER VEHICLE_HEADER;
 typedef struct _VEHICLE VEHICLE;
 
 void create_vehicle_binary(FILE *csv_fp, FILE *bin_fp);
 void read_vehicle_bin(FILE *bin_fp);
-void search_by_field(FILE *bin_fp, char *field, char *value);
+void search_vehicle_by_field(FILE *bin_fp, char *field, char *value);
 
 #endif

@@ -199,6 +199,15 @@ char *read_inside_quotes(int *str_len){
     return content;
 }
 
+bool compare_strings_whithout_terminator(char *stringA, char *stringB, int size) {
+    for (int i = 0; i < size; i++) {
+        if (stringA[i] != stringB[i])
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
 /* ------ General Utils ------ */
 
 // Stores header string fields with its respective value (@word), ignoring '\0' and filling with '@'
@@ -230,74 +239,18 @@ void free_data(WORDS *word_list, char *reg_line){
     free(reg_line);
 }
 
-/* DA PRA JOGAR PRO VEICULOS.C */
-void print_month_name(MONTH month){
-    switch (month){
-        case Janeiro:
-            printf("janeiro");
-            break;
-        case Fevereiro:
-            printf("fevereiro");
-            break;
-        case Marco:
-            printf("março");
-            break;
-        case Abril:
-            printf("abril");
-            break;
-        case Maio:
-            printf("maio");
-            break;
-        case Junho:
-            printf("junho");
-            break;
-        case Julho:
-            printf("julho");
-            break;
-        case Agosto:
-            printf("agosto");
-            break;
-        case Setembro:
-            printf("setembro");
-            break;
-        case Outubro:
-            printf("outubro");
-            break;
-        case Novembro:
-            printf("novembro");
-            break;
-        case Dezembro:
-            printf("dezembro");
-            break;
-        default:
-            break;
-    }
-}
-
-void print_date(char *date){
-    printf("Data de entrada do veiculo na frota: ");
-    if (date[0] == '\0'){
-        printf("campo com valor nulo\n");
-        return;
-    }
-
-    // YEAR-MO-DA
-    //         ^ date[8:9] = "DA" (day)
-    //      ^ date[5:6] = "MO" (month)
-    // ^ date[0:3] = "YEAR" (year)
-    char month[3] = "";
-    strncpy(month, &date[5], 2);
-
-    print_string_without_terminator(&date[8], 2, FALSE);
-    printf(" de ");
-    print_month_name(atoi(month));
-    printf(" de ");
-    print_string_without_terminator(&date[0], 4, TRUE);
-}
-
 int register_exists(FILE *fp){
     char status;
     fread(&status, sizeof(char), 1, fp);
 
     return (status == '1');
+}
+
+void go_to_end_of_register(FILE *bin_fp, long long start_of_register, int reg_len){
+    // @reg_len + 5 = total register size
+    // @cur_offset - @start_of_register = how much we went through the register
+    // left to end of register = total register size - how much we went through the register
+    long long int cur_offset = ftell(bin_fp);
+    long long int next_reg_offset = reg_len + 5 - (cur_offset - start_of_register);
+    fseek(bin_fp, next_reg_offset, SEEK_CUR);
 }
