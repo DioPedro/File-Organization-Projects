@@ -42,11 +42,13 @@ char **get_word_list(WORDS *word_list);
 void print_word_list(WORDS *word_list);
 void print_string_without_terminator(char *string, int len, bool has_endl);
 void free_word_list(WORDS *word_list);
+char *read_inside_quotes(int *str_len);
 
 // General utils
 void strings_creation(char *reg_field, char *word, int size);
 void write_data_strings(FILE *bin_fp, char *data_field, int size);
 void free_data(WORDS *word_list, char *reg_line);
+int register_exists(FILE *fp);
 void print_month_name(MONTH month);
 void print_date(char *date);
 

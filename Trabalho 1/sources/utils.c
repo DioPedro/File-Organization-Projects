@@ -167,6 +167,38 @@ void free_word_list(WORDS *word_list){
     free(word_list);
 }
 
+char *read_inside_quotes(int *str_len){
+    char cur_char = getc(stdin);
+    bool is_first_quote = (cur_char == '"');
+    while (!is_first_quote){
+        cur_char = getc(stdin);
+        is_first_quote = (cur_char == '"');
+    }
+
+    int cur_len = 0, size = 16;
+    char *content = malloc(size * sizeof(char));
+    while (is_first_quote){
+        if (cur_len == size){
+            size *= 2;
+            content = realloc(content, size);
+        }
+
+        cur_char = getc(stdin);
+
+        // When reads the another '"', stop reading
+        is_first_quote = (cur_char != '"');
+        if (!is_first_quote)
+            break;
+        
+        content[cur_len++] = cur_char;
+    }
+    content = realloc(content, cur_len + 1);
+    content[cur_len] = '\0';
+
+    *str_len = cur_len; 
+    return content;
+}
+
 /* ------ General Utils ------ */
 
 // Stores header string fields with its respective value (@word), ignoring '\0' and filling with '@'
@@ -198,6 +230,7 @@ void free_data(WORDS *word_list, char *reg_line){
     free(reg_line);
 }
 
+/* DA PRA JOGAR PRO VEICULOS.C */
 void print_month_name(MONTH month){
     switch (month){
         case Janeiro:
@@ -260,4 +293,11 @@ void print_date(char *date){
     print_month_name(atoi(month));
     printf(" de ");
     print_string_without_terminator(&date[0], 4, TRUE);
+}
+
+int register_exists(FILE *fp){
+    char status;
+    fread(&status, sizeof(char), 1, fp);
+
+    return (status == '1');
 }
