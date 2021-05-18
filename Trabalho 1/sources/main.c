@@ -60,18 +60,25 @@ int main(){
         printf("Deu ruim no binário\n");
         return 0;
     }
+    else
+        printf("Abriu\n");
     
     // create_route_binary(csv_fp, bin_fp);
     // create_vehicle_binary(csv_fp, bin_fp);
-    char field[100], value[30];
-    scanf("%s %s", field, value);
+    char field[100];
+    scanf("%s", field);
+    printf("%s\n", field);
 
-    // int len;
-    // char *value = read_inside_quotes(&len);
-    search_route_by_field(bin_fp, field, value);
-    // search_vehicle_by_field(bin_fp, field, value);
+    int len;
+    char *value = read_inside_quotes(&len);
+    printf("%s\n", value);
+
+    // search_route_by_field(bin_fp, field, value);
+    search_vehicle_by_field(bin_fp, field, value);
     // read_route_bin(bin_fp);
     // read_vehicle_bin(bin_fp);
+
+    free(value);
 
     /* Falta arrumar a funcao de ler valor */
 

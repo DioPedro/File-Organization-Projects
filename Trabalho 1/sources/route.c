@@ -379,6 +379,7 @@ void search_route_by_field(FILE *bin_fp, char *field, char *value){
             fread(content, sizeof(char), field_size, bin_fp);
 
             are_equal = compare_strings_whithout_terminator(value, content, field_size);
+            printf(are_equal == TRUE ? "TRUE\n" : "FALSE");
             if (!are_equal){
                 go_to_end_of_register(bin_fp, start_of_register, reg_len);
             }
@@ -404,14 +405,16 @@ void search_route_by_field(FILE *bin_fp, char *field, char *value){
 
             if (!are_equal){
                 go_to_end_of_register(bin_fp, start_of_register, reg_len);
-            } else {
-                fseek(bin_fp, start_of_register, SEEK_SET);
-                ROUTE valid_register;
-                read_route_register(bin_fp, &valid_register);
-                print_route_register(&valid_register);
-
-                free_dynamic_fields(&valid_register);
             }
+        }
+
+        if (are_equal){
+            fseek(bin_fp, start_of_register, SEEK_SET);
+            ROUTE valid_register;
+            read_route_register(bin_fp, &valid_register);
+            print_route_register(&valid_register);
+
+            free_dynamic_fields(&valid_register);
         }
     }
 }

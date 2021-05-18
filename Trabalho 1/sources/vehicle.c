@@ -492,15 +492,16 @@ void search_vehicle_by_field(FILE *bin_fp, char *field, char *value){
 
             if (!are_equal){
                 go_to_end_of_register(bin_fp, start_of_register, reg_len);
-            } else {
-                
-                fseek(bin_fp, start_of_register, SEEK_SET);
-                VEHICLE valid_register;
-                read_vehicle_register(bin_fp, &valid_register);
-                print_vehicle_register(&valid_register);
-
-                free_dynamic_fields(&valid_register);
             }
+        }
+
+        if (are_equal){
+            fseek(bin_fp, start_of_register, SEEK_SET);
+            VEHICLE valid_register;
+            read_vehicle_register(bin_fp, &valid_register);
+            print_vehicle_register(&valid_register);
+
+            free_dynamic_fields(&valid_register);
         }
     }
 }
