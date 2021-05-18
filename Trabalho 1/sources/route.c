@@ -265,39 +265,3 @@ void read_route_bin(FILE *bin_fp){
         }
     }
 }
-
-/*
-    bool create_bin(FILE *csv, FILE *bin)
-        Verifica se o arquivo já está em uso
-            se sim retornar erro
-        Senao
-            continua a função
-
-        Reading the header
-        header_line = read_line(csv_fp);
-        WORDS *header_words = split_list(header_line, ',');
-        
-        ROUTE_HEADER route_header;
-
-        route_header.status = '0';
-        route.num_of_regs = 0;
-        route.num_of_removeds = 0;
-        route.code_description = header_words[0];
-        route.card_description = header_words[1];
-        route.name_description = header_words[2];
-        route.color_description = header_words[3];
-
-        Reading the line of the register
-        while(!feof(csv_fp)){
-            char *line = read_live(csv_fp)
-        }
-        
-
-    void funcionalidade_1(FILE *csv_fp, FILE *bin_fp)
-        bool created = create_bin(csv_fp, bin_fp)
-
-        if (bool)
-            print("SUCESSO")
-        else
-            print("DEU MERDA")
-*/
