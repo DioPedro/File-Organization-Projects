@@ -379,7 +379,6 @@ void search_route_by_field(FILE *bin_fp, char *field, char *value){
             fread(content, sizeof(char), field_size, bin_fp);
 
             are_equal = compare_strings_whithout_terminator(value, content, field_size);
-            printf(are_equal == TRUE ? "TRUE\n" : "FALSE");
             if (!are_equal){
                 go_to_end_of_register(bin_fp, start_of_register, reg_len);
             }
