@@ -19,6 +19,6 @@ typedef struct _ROUTE ROUTE;
 void create_route_binary(FILE *csv_fp, FILE *bin_fp);
 void read_route_bin(FILE *bin_fp);
 void search_route_by_field(FILE *bin_fp, char *field, char *value);
-void insert_new_route(FILE *bin_fp);
+void insert_new_route(FILE *bin_fp, bool *inserted);
 
 #endif

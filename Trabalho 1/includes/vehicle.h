@@ -19,6 +19,6 @@ typedef struct _VEHICLE VEHICLE;
 void create_vehicle_binary(FILE *csv_fp, FILE *bin_fp);
 void read_vehicle_bin(FILE *bin_fp);
 void search_vehicle_by_field(FILE *bin_fp, char *field, char *value);
-void insert_new_vehicle(FILE *bin_fp);
+void insert_new_vehicle(FILE *bin_fp, bool *inserted);
 
 #endif

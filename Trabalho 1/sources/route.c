@@ -262,6 +262,11 @@ void read_route_bin(FILE *bin_fp){
     fseek(bin_fp, 9, SEEK_SET);
     fread(&num_of_register, sizeof(int), 1, bin_fp);
 
+    if (num_of_register == 0){
+        printf("Registro inexistente.\n");
+        return;
+    }
+
     // Jumps to the first register
     fseek(bin_fp, 69, SEEK_CUR);
     for (int i = 0; i < num_of_register; i++) {
@@ -464,9 +469,10 @@ static WORDS *read_entries(){
     return entries;
 }
 
-void insert_new_route(FILE *bin_fp){
+void insert_new_route(FILE *bin_fp, bool *inserted){
     if (bin_fp == NULL){
-        printf("Falha no processamento do arquivo\n");
+        printf("Falha no processamento do arquivo.\n");
+        *inserted = FALSE;
         return;
     }
 
@@ -477,7 +483,8 @@ void insert_new_route(FILE *bin_fp){
 
     // Checking if the file is valid to be used
     if (header.status == '0'){
-        printf("Falha no processamento do arquivo\n");
+        printf("Falha no processamento do arquivo.\n");
+        *inserted = FALSE;
         return;
     } else {
         set_file_in_use(bin_fp);
@@ -489,17 +496,14 @@ void insert_new_route(FILE *bin_fp){
     int num_registers = atoi(iterations);
     free(iterations);
 
-    printf("Num of data: %d\n", num_registers);
-
     for (int i = 0; i < num_registers; i++){
         WORDS *entries  = read_entries();
         int num_of_entries = get_word_list_length(entries);
         if (num_of_entries != 4){
             printf("Faltam dados\n");
+            *inserted = FALSE;
             return;
         }
-
-        print_word_list(entries);
 
         ROUTE new_route;
         fill_register(&new_route, get_word_list(entries), &header);
@@ -510,4 +514,5 @@ void insert_new_route(FILE *bin_fp){
     
     // After adding all the new data, we update the header of the file
     update_header(bin_fp, &header);
+    *inserted = TRUE;
 }

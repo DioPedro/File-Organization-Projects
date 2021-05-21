@@ -1,3 +1,12 @@
+/* 
+**************************************************
+*             TRABALHO 1 de Arquivos             *
+* Alunos:                                        *
+*  - Diógenes Silva Pedro, nUSP: 11883476        *
+*  - Victor Henrique de Sa Silva, nUSP: 11795759 *
+**************************************************
+*/  
+
 #include "../includes/menu.h"
 
 typedef enum _CASE{
@@ -34,21 +43,21 @@ void binarioNaTela(char *nomeArquivoBinario) { /* Você não precisa entender o 
 }
 
 void create_binary(CASE which_case){
-    char csv_filename[50];
-    scanf("%s", csv_filename);
-    
-    char bin_filename[50];
-    scanf("%s", bin_filename);    
+    char *csv_filename = read_word(stdin);
 
     FILE *csv_fp = fopen(csv_filename, "r");
     if (csv_fp == NULL) {
         printf("Falha no processamento do arquivo.\n");
+        free(csv_filename);
         return;
     }
+
+    char *bin_filename = read_word(stdin);
 
     FILE *bin_fp = fopen(bin_filename, "wb");
     if (bin_fp == NULL) {
         printf("Falha no processamento do arquivo.\n");
+        free(bin_filename);
         return;
     }
 
@@ -57,16 +66,17 @@ void create_binary(CASE which_case){
     else
         create_route_binary(csv_fp, bin_fp);
 
-
     fclose(bin_fp);
     fclose(csv_fp);
 
     binarioNaTela(bin_filename);
+
+    free(csv_filename);
+    free(bin_filename);
 }
 
 void print_data(CASE which_case){
-    char bin_filename[50];
-    scanf("%s", bin_filename);    
+    char *bin_filename = read_word(stdin);
 
     FILE *bin_fp = fopen(bin_filename, "rb");
     if (bin_fp == NULL) {
@@ -79,16 +89,13 @@ void print_data(CASE which_case){
     else 
         read_route_bin(bin_fp);
 
+    free(bin_filename);
     fclose(bin_fp);
 } 
 
 void search_by_field(CASE which_case){
-    char bin_filename[50];
-    scanf("%s", bin_filename);     
-
-    char field_name[50];
-    scanf("%s", field_name);
-
+    char *bin_filename = read_word(stdin);
+    char *field_name = read_word(stdin);
     char *value;
     if (strcmp(field_name, "quantidadeLugares") == 0 || strcmp(field_name, "codLinha") == 0) 
         value = read_word(stdin);
@@ -106,33 +113,39 @@ void search_by_field(CASE which_case){
     else
         search_route_by_field(bin_fp, field_name, value);
 
+    free(bin_filename);
+    free(field_name);
     free(value);
     fclose(bin_fp);
 }
 
 void insert(CASE which_case){
-    char bin_filename[50];
-    scanf("%s", bin_filename);    
+    char *bin_filename = read_word(stdin);
 
-    FILE *bin_fp = fopen(bin_filename, "rb");
+    FILE *bin_fp = fopen(bin_filename, "r+b");
     if (bin_fp == NULL) {
         printf("Falha no processamento do arquivo.\n");
         return;
     }
 
+    bool inserted;
     if (which_case == Vehicle)
-        insert_new_vehicle(bin_fp);
+        insert_new_vehicle(bin_fp, &inserted);
     else 
-        insert_new_route(bin_fp);
+        insert_new_route(bin_fp, &inserted);
 
     fclose(bin_fp);
 
-    binarioNaTela(bin_filename);
+    if (inserted)
+        binarioNaTela(bin_filename);
+
+    free(bin_filename);
 }
 
 void start_program(){
-    int which_case;
-    scanf("%d", &which_case);
+    char *operation = read_word(stdin);
+    int which_case = atoi(operation);
+    free(operation);
 
     if (which_case == 1 || which_case == 2)
         create_binary(which_case % 2);
