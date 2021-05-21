@@ -237,49 +237,6 @@ static void free_dynamic_fields(VEHICLE *data){
         free(data->category);
 }
 
-void print_month_name(MONTH month){
-    switch (month){
-        case Janeiro:
-            printf("janeiro");
-            break;
-        case Fevereiro:
-            printf("fevereiro");
-            break;
-        case Marco:
-            printf("março");
-            break;
-        case Abril:
-            printf("abril");
-            break;
-        case Maio:
-            printf("maio");
-            break;
-        case Junho:
-            printf("junho");
-            break;
-        case Julho:
-            printf("julho");
-            break;
-        case Agosto:
-            printf("agosto");
-            break;
-        case Setembro:
-            printf("setembro");
-            break;
-        case Outubro:
-            printf("outubro");
-            break;
-        case Novembro:
-            printf("novembro");
-            break;
-        case Dezembro:
-            printf("dezembro");
-            break;
-        default:
-            break;
-    }
-}
-
 void print_date(char *date){
     printf("Data de entrada do veiculo na frota: ");
     if (date[0] == '\0'){
@@ -287,34 +244,47 @@ void print_date(char *date){
         return;
     }
 
+    char *months[12] = {"janeiro", "fevereiro", "março", "abril",
+                        "maio", "junho", "julho", "agosto",
+                        "setembro", "outubro", "novembro", "dezembro"};
+
+    char formated_date[50] = "";
+
     // YEAR-MO-DA
     //         ^ date[8:9] = "DA" (day)
     //      ^ date[5:6] = "MO" (month)
     // ^ date[0:3] = "YEAR" (year)
     char month[3] = "";
     strncpy(month, &date[5], 2);
+    
+    strncpy(formated_date, &date[8], 2);
+    strcat(formated_date, " de ");
+    strcat(formated_date, months[atoi(month) - 1]);
+    strcat(formated_date, " de ");
+    strncat(formated_date, &date[0], 4);
 
-    print_string_without_terminator(&date[8], 2, FALSE);
-    printf(" de ");
-    print_month_name(atoi(month));
-    printf(" de ");
-    print_string_without_terminator(&date[0], 4, TRUE);
+    printf("%s\n", formated_date);
 }
 
 void print_vehicle_register(VEHICLE *data){
     printf("Prefixo do veiculo: %.5s\n", data->prefix);
     
-    printf("Modelo do veiculo: ");
+    char model[100] = "";
+    strcpy(model, "Modelo do veiculo: ");
     if (data->model_length != 0)
-        print_string_without_terminator(data->model, data->model_length, TRUE);
+        strncat(model, data->model, data->model_length);
     else    
-        printf("campo com valor nulo\n");
+        strcat(model, "campo com valor nulo");
+    printf("%s\n", model);
+        
 
-    printf("Categoria do veiculo: ");
+    char category[100] = "";
+    strcpy(category, "Categoria do veiculo: ");
     if (data->category_length != 0)
-        print_string_without_terminator(data->category, data->category_length, TRUE);
+        strncat(category, data->category, data->category_length);
     else
-        printf("campo com valor nulo\n");
+        strcat(category, "campo com valor nulo");
+    printf("%s\n", category);
 
     print_date(data->date);
 
@@ -332,6 +302,11 @@ void read_vehicle_bin(FILE *bin_fp){
     int num_of_register;
     fseek(bin_fp, 9, SEEK_SET);
     fread(&num_of_register, sizeof(int), 1, bin_fp);
+
+    if (num_of_register == 0) {
+        printf("Registro inexistente\n");       
+        return;
+    }
 
     // Jumps to the first register
     fseek(bin_fp, 162, SEEK_CUR);

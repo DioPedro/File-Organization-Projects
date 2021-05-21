@@ -137,8 +137,6 @@ static void write_data(FILE *bin_fp, ROUTE *data, ROUTE_HEADER *header){
     */
     data->register_length = 13 + data->color_length + data->name_length;
     
-    printf("%d\n", data->register_length);
-
     fwrite(&(data->is_removed), sizeof(char), 1, bin_fp);
     fwrite(&(data->register_length), sizeof(int), 1, bin_fp);
     fwrite(&(data->route_code), sizeof(int), 1, bin_fp);
