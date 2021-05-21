@@ -45,6 +45,16 @@ struct _VEHICLE{
     char *category;
 };
 
+void read_header(FILE *bin_fp, VEHICLE_HEADER *header){
+    if (bin_fp == NULL)
+        return;
+
+    fread(&header->status, sizeof(char), 1, bin_fp);
+    fread(&header->next_reg, sizeof(long long int), 1, bin_fp);
+    fread(&header->num_of_regs, sizeof(int), 1, bin_fp);
+    fread(&header->num_of_removeds, sizeof(int), 1, bin_fp);
+}
+
 static bool check_integrity(char *csv_field, VEHICLE_HEADER *header){
     int length = strlen(csv_field);
     if (length == 0) 
@@ -504,4 +514,76 @@ void search_vehicle_by_field(FILE *bin_fp, char *field, char *value){
             free_dynamic_fields(&valid_register);
         }
     }
+}
+
+WORDS *read_entries(){
+    WORDS *entries = create_word_list();
+    if (entries == NULL)
+        return NULL;
+
+    char *prefix = read_inside_quotes();
+    if (prefix == NULL)
+        return NULL;
+    else 
+        append_word(entries, prefix);
+
+    char *date = read_inside_quotes();
+    if (date == NULL)
+        return NULL;
+    else
+        append_word(entries, date);
+
+    char *num_of_seats = read_word(stdin);
+    if (num_of_seats == NULL)
+        return NULL;
+    else
+        append_word(entries, num_of_seats);   
+
+    char *route_code = read_word(stdin);
+    if (route_code == NULL)
+        return NULL;
+    else
+        append_word(entries, route_code);
+
+    char *model = read_inside_quotes();
+    if (model == NULL)
+        return NULL;
+    else
+        append_word(entries, model);
+
+    char *category = read_inside_quotes();
+    if (category == NULL)
+        return NULL;
+    else
+        append_word(entries, category);
+
+    return entries;
+}
+
+void insert_new_vehicle(FILE *bin_fp){
+    if (bin_fp == NULL){
+        printf("Arquivo inexistente (n sei se é a msgm certa)\n");
+        return;
+    }
+
+    fseek(bin_fp, 0, SEEK_SET);
+
+    VEHICLE_HEADER header;
+    read_header(bin_fp, &header);
+    fseek(bin_fp, header.next_reg, SEEK_SET);
+
+    WORDS *entries  = read_entries();
+    int num_of_entries = get_word_list_length(entries);
+    if (num_of_entries != 6){
+        printf("Faltam dados\n");
+        return;
+    }
+
+    print_word_list(entries);
+
+    VEHICLE new_vehicle;
+    fill_register(&new_vehicle, get_word_list(entries), &header);
+    write_data(bin_fp, &new_vehicle, &header);
+
+    free_word_list(entries);
 }

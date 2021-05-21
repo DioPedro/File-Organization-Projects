@@ -55,7 +55,7 @@ int main(){
     //     return 0;
     // }
 
-    FILE *bin_fp = fopen(bin_name, "rb");
+    FILE *bin_fp = fopen(bin_name, "r+b");
     if (bin_fp == NULL){
         printf("Deu ruim no binário\n");
         return 0;
@@ -65,22 +65,25 @@ int main(){
     
     // create_route_binary(csv_fp, bin_fp);
     // create_vehicle_binary(csv_fp, bin_fp);
-    char field[100];
-    scanf("%s", field);
-    printf("%s\n", field);
 
-    int len;
-    char *value = read_inside_quotes(&len);
-    printf("%s\n", value);
+    // char field[100];
+    // scanf("%s", field);
+    // printf("%s\n", field);
+
+    // int len;
+    // char *value = read_inside_quotes(&len);
+    // printf("%s\n", value);
 
     // search_route_by_field(bin_fp, field, value);
-    search_vehicle_by_field(bin_fp, field, value);
+    // search_vehicle_by_field(bin_fp, field, value);
     // read_route_bin(bin_fp);
     // read_vehicle_bin(bin_fp);
 
-    free(value);
+    // free(value);
 
     /* Falta arrumar a funcao de ler valor */
+
+    insert_new_vehicle(bin_fp);
 
 
     // fclose(csv_fp);
