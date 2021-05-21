@@ -40,14 +40,14 @@ void binarioNaTela(char *nomeArquivoBinario) { /* Você não precisa entender o 
 }
 
 int main(){
-    // char *op = read_word(stdin);
-    // int operation = atoi(op);
-    // free(op);
+    char *op = read_word(stdin);
+    int operation = atoi(op);
+    free(op);
     // char *csv_name = read_word(stdin);
     char *bin_name = read_word(stdin);
     printf("%s\n", bin_name);
 
-    // printf("%d %s %s\n", operation, csv_name, bin_name);
+    printf("%d %s\n", operation, bin_name);
 
     // FILE *csv_fp = fopen(csv_name, "r");    
     // if (csv_fp == NULL){
@@ -83,14 +83,15 @@ int main(){
 
     /* Falta arrumar a funcao de ler valor */
 
-    insert_new_vehicle(bin_fp);
+    // insert_new_vehicle(bin_fp);
+    insert_new_route(bin_fp);
 
 
     // fclose(csv_fp);
     fclose(bin_fp);
 
     // binarioNaTela(bin_name);
-    // binarioNaTela("./CasosT/Binary Files/veiculo1_saida_esperada.bin");
+    // binarioNaTela("./CasosT/Binary Files/linha15_saida_esperada.bin");
 
     // free(csv_name);
     free(bin_name);

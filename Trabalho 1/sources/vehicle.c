@@ -19,7 +19,7 @@ enum _VEHICLE_FIELD{
 };
 
 struct _VEHICLE_HEADER{
-    char status;
+    char status; // '0' == inconsistent file
     long long int next_reg;
     int num_of_regs;
     int num_of_removeds;
@@ -45,7 +45,7 @@ struct _VEHICLE{
     char *category;
 };
 
-void read_header(FILE *bin_fp, VEHICLE_HEADER *header){
+static void read_header(FILE *bin_fp, VEHICLE_HEADER *header){
     if (bin_fp == NULL)
         return;
 
@@ -516,7 +516,7 @@ void search_vehicle_by_field(FILE *bin_fp, char *field, char *value){
     }
 }
 
-WORDS *read_entries(){
+static WORDS *read_entries(){
     WORDS *entries = create_word_list();
     if (entries == NULL)
         return NULL;
@@ -562,7 +562,7 @@ WORDS *read_entries(){
 
 void insert_new_vehicle(FILE *bin_fp){
     if (bin_fp == NULL){
-        printf("Arquivo inexistente (n sei se é a msgm certa)\n");
+        printf("Falha no processamento do arquivo\n");
         return;
     }
 
@@ -570,20 +570,40 @@ void insert_new_vehicle(FILE *bin_fp){
 
     VEHICLE_HEADER header;
     read_header(bin_fp, &header);
+
+    // Checking if the file is valid to be used
+    if (header.status == '0'){
+        printf("Falha no processamento do arquivo\n");
+        return;
+    } else {
+        set_file_in_use(bin_fp);
+    }
+    
     fseek(bin_fp, header.next_reg, SEEK_SET);
 
-    WORDS *entries  = read_entries();
-    int num_of_entries = get_word_list_length(entries);
-    if (num_of_entries != 6){
-        printf("Faltam dados\n");
-        return;
+    char *iterations = read_word(stdin);
+    int num_registers = atoi(iterations);
+    free(iterations);
+
+    printf("Num of data: %d\n", num_registers);
+
+    for (int i = 0; i < num_registers; i++){
+        WORDS *entries  = read_entries();
+        int num_of_entries = get_word_list_length(entries);
+        if (num_of_entries != 6){
+            printf("Faltam dados\n");
+            return;
+        }
+
+        print_word_list(entries);
+
+        VEHICLE new_vehicle;
+        fill_register(&new_vehicle, get_word_list(entries), &header);
+        write_data(bin_fp, &new_vehicle, &header);
+        
+        free_word_list(entries);
     }
-
-    print_word_list(entries);
-
-    VEHICLE new_vehicle;
-    fill_register(&new_vehicle, get_word_list(entries), &header);
-    write_data(bin_fp, &new_vehicle, &header);
-
-    free_word_list(entries);
+    
+    // After adding all the new data, we update the header of the file
+    update_header(bin_fp, &header);
 }

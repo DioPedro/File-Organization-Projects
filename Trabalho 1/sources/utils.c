@@ -275,3 +275,9 @@ void go_to_end_of_register(FILE *bin_fp, long long start_of_register, int reg_le
     long long int next_reg_offset = reg_len + 5 - (cur_offset - start_of_register);
     fseek(bin_fp, next_reg_offset, SEEK_CUR);
 }
+
+void set_file_in_use(FILE *bin_fp){
+    char status = '0';
+    fseek(bin_fp, 0, SEEK_SET);
+    fwrite(&status, sizeof(char), 1, bin_fp);
+}

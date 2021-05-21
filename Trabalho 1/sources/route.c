@@ -40,6 +40,16 @@ struct _ROUTE{
     char *color;
 };
 
+static void read_header(FILE *bin_fp, ROUTE_HEADER *header){
+    if (bin_fp == NULL)
+        return;
+
+    fread(&header->status, sizeof(char), 1, bin_fp);
+    fread(&header->next_reg, sizeof(long long int), 1, bin_fp);
+    fread(&header->num_of_regs, sizeof(int), 1, bin_fp);
+    fread(&header->num_of_removeds, sizeof(int), 1, bin_fp);
+}
+
 static bool check_integrity(char *csv_field, ROUTE_HEADER *header){
     int length = strlen(csv_field);
     if (length == 0) 
@@ -67,7 +77,11 @@ static void fill_register(ROUTE *data, char **word, ROUTE_HEADER *header){
         data->is_removed = '1';
     }
 
-    data->accepts_card = word[1][0]; // Copying the first char from string "x"  
+    is_ok = check_integrity(word[1], header);
+    if (!is_ok)
+        data->accepts_card = '\0';
+    else
+        data->accepts_card = word[1][0];
 
     is_ok = check_integrity(word[2], header);
     if (!is_ok)
@@ -123,6 +137,8 @@ static void write_data(FILE *bin_fp, ROUTE *data, ROUTE_HEADER *header){
     */
     data->register_length = 13 + data->color_length + data->name_length;
     
+    printf("%d\n", data->register_length);
+
     fwrite(&(data->is_removed), sizeof(char), 1, bin_fp);
     fwrite(&(data->register_length), sizeof(int), 1, bin_fp);
     fwrite(&(data->route_code), sizeof(int), 1, bin_fp);
@@ -416,4 +432,84 @@ void search_route_by_field(FILE *bin_fp, char *field, char *value){
             free_dynamic_fields(&valid_register);
         }
     }
+}
+
+static WORDS *read_entries(){
+    WORDS *entries = create_word_list();
+    if (entries == NULL)
+        return NULL;
+
+    char *route_code = read_word(stdin);
+    if (route_code == NULL)
+        return NULL;
+    else
+        append_word(entries, route_code);
+
+    char *accepts_card = read_inside_quotes();
+    if (accepts_card == NULL)
+        return NULL;
+    else
+        append_word(entries, accepts_card);
+
+    char *route_name = read_inside_quotes();
+    if (route_name == NULL)
+        return NULL;
+    else
+        append_word(entries, route_name);   
+
+    char *color = read_inside_quotes();
+    if (color == NULL)
+        return NULL;
+    else
+        append_word(entries, color);
+
+    return entries;
+}
+
+void insert_new_route(FILE *bin_fp){
+    if (bin_fp == NULL){
+        printf("Falha no processamento do arquivo\n");
+        return;
+    }
+
+    fseek(bin_fp, 0, SEEK_SET);
+
+    ROUTE_HEADER header;
+    read_header(bin_fp, &header);
+
+    // Checking if the file is valid to be used
+    if (header.status == '0'){
+        printf("Falha no processamento do arquivo\n");
+        return;
+    } else {
+        set_file_in_use(bin_fp);
+    }
+    
+    fseek(bin_fp, header.next_reg, SEEK_SET);
+
+    char *iterations = read_word(stdin);
+    int num_registers = atoi(iterations);
+    free(iterations);
+
+    printf("Num of data: %d\n", num_registers);
+
+    for (int i = 0; i < num_registers; i++){
+        WORDS *entries  = read_entries();
+        int num_of_entries = get_word_list_length(entries);
+        if (num_of_entries != 4){
+            printf("Faltam dados\n");
+            return;
+        }
+
+        print_word_list(entries);
+
+        ROUTE new_route;
+        fill_register(&new_route, get_word_list(entries), &header);
+        write_data(bin_fp, &new_route, &header);
+        
+        free_word_list(entries);
+    }
+    
+    // After adding all the new data, we update the header of the file
+    update_header(bin_fp, &header);
 }

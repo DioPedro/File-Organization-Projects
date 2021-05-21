@@ -52,5 +52,6 @@ void write_data_strings(FILE *bin_fp, char *data_field, int size);
 void free_data(WORDS *word_list, char *reg_line);
 int register_exists(FILE *fp);
 void go_to_end_of_register(FILE *bin_fp, long long start_of_register, int reg_len);
+void set_file_in_use(FILE *bin_fp);
 
 #endif
