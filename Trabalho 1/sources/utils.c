@@ -16,13 +16,12 @@ struct _WORDS{
 };
 
 // Function that reads only one word
-char* read_word(FILE* input){
+char *read_word(FILE* input){
     char *str;
 
-    str = (char*) malloc(32 * sizeof(char)); 
+    str = malloc(32 * sizeof(char)); 
 
     int pos = 0, tamanho = 32;
-    
     do {
         if (pos == tamanho) {
             str = realloc(str, 2 * tamanho);
@@ -167,12 +166,18 @@ void free_word_list(WORDS *word_list){
     free(word_list);
 }
 
-char *read_inside_quotes(int *str_len){
+char *read_inside_quotes(){
     char cur_char = getc(stdin);
     bool is_first_quote = (cur_char == '"');
-    while (!is_first_quote){
-        cur_char = getc(stdin);
-        is_first_quote = (cur_char == '"');
+
+    // If the first char isn't a quote, this function returns "NULO" and waits for the end of input
+    if (!is_first_quote){
+        char *nil = malloc(5 * sizeof(char));
+        strcpy(nil, "NULO");
+        while (cur_char != ' ' && cur_char != '\n')
+            cur_char = getc(stdin);
+
+        return nil;
     }
 
     int cur_len = 0, size = 16;
@@ -192,10 +197,16 @@ char *read_inside_quotes(int *str_len){
         
         content[cur_len++] = cur_char;
     }
+
+    // Escape ' '
+    cur_char = getc(stdin);
+
+    if (cur_len == 0)
+        return NULL;
+
     content = realloc(content, cur_len + 1);
     content[cur_len] = '\0';
 
-    *str_len = cur_len; 
     return content;
 }
 
@@ -206,6 +217,16 @@ bool compare_strings_whithout_terminator(char *stringA, char *stringB, int size)
     }
 
     return TRUE;
+}
+
+void append_word(WORDS *base, char *new_word){
+    if (base == NULL) {
+        printf("WORDS nulo, encerrando função\n");
+        return;
+    }
+    
+    base->words = realloc(base->words, (base->amount + 1) * sizeof(char *));
+    base->words[base->amount++] = new_word;
 }
 
 /* ------ General Utils ------ */

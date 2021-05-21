@@ -42,7 +42,8 @@ char **get_word_list(WORDS *word_list);
 void print_word_list(WORDS *word_list);
 void print_string_without_terminator(char *string, int len, bool has_endl);
 void free_word_list(WORDS *word_list);
-char *read_inside_quotes(int *str_len);
+char *read_inside_quotes();
+void append_word(WORDS *base, char *new_word);
 bool compare_strings_whithout_terminator(char *stringA, char *stringB, int size);
 
 // General utils
