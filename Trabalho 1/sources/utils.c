@@ -200,6 +200,8 @@ char *read_inside_quotes(){
 
     // Escape ' '
     cur_char = getc(stdin);
+    while (cur_char != '\n' && cur_char != ' ')
+        cur_char = getc(stdin);
 
     if (cur_len == 0)
         return NULL;
@@ -210,8 +212,14 @@ char *read_inside_quotes(){
     return content;
 }
 
-bool compare_strings_whithout_terminator(char *stringA, char *stringB, int size) {
-    for (int i = 0; i < size; i++) {
+bool compare_strings_whithout_terminator(char *stringA, char *stringB, int stringA_size) {
+    if (strcmp("NULO", stringB) == 0 && stringA[0] == '\0')
+        return TRUE;
+    
+    if (stringA_size != strlen(stringB))
+        return FALSE;
+        
+    for (int i = 0; i < stringA_size; i++) {
         if (stringA[i] != stringB[i])
             return FALSE;
     }
@@ -261,7 +269,7 @@ void free_data(WORDS *word_list, char *reg_line){
 }
 
 int register_exists(FILE *fp){
-    char status;
+    char status = 'y';
     fread(&status, sizeof(char), 1, fp);
 
     return (status == '1');
