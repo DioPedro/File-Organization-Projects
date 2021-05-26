@@ -42,18 +42,23 @@ void binarioNaTela(char *nomeArquivoBinario) {
 	fclose(fs);
 }
 
+// @which_case é um parâmetro para decidir a formatação do arquivo (veiculo ou linha)
+ 
+// Função que cria um arquivo binário a partir de um csv
 void create_binary(CASE which_case){
     char *csv_filename = read_word(stdin);
 
+    // Verifica se o arquivo existe 
     FILE *csv_fp = fopen(csv_filename, "r");
     if (csv_fp == NULL) {
         printf("Falha no processamento do arquivo.\n");
         free(csv_filename);
         return;
     }
-
+    
     char *bin_filename = read_word(stdin);
-
+    
+    // Abre para escrita o arquivo binário e verifica se foi aberto com sucesso
     FILE *bin_fp = fopen(bin_filename, "wb");
     if (bin_fp == NULL) {
         printf("Falha no processamento do arquivo.\n");
@@ -61,6 +66,7 @@ void create_binary(CASE which_case){
         return;
     }
 
+    // Escolhe entre os dois casos possíveis e cria o binário
     if (which_case == Vehicle)
         create_vehicle_binary(csv_fp, bin_fp);
     else
@@ -75,15 +81,18 @@ void create_binary(CASE which_case){
     free(bin_filename);
 }
 
+// Função que imprime um arquivo binário
 void print_data(CASE which_case){
     char *bin_filename = read_word(stdin);
 
+    // Abre para leitura e verifica a existência do arquivo
     FILE *bin_fp = fopen(bin_filename, "rb");
     if (bin_fp == NULL) {
         printf("Falha no processamento do arquivo.\n");
         return;
     }
 
+    // Escolhe entre os dois binários possíveis e imprime
     if (which_case == Vehicle)
         read_vehicle_bin(bin_fp);
     else 
@@ -93,21 +102,27 @@ void print_data(CASE which_case){
     fclose(bin_fp);
 } 
 
+// Função que procura por campos com um determinado valor no binário
 void search_by_field(CASE which_case){
     char *bin_filename = read_word(stdin);
     char *field_name = read_word(stdin);
+    
+    // Se os campos forem quantidadeLugares ou codLinha, os valores inseridos não estarão entre aspas
+    // Se não, a leitura deve considerar a existência ou não delas
     char *value;
     if (strcmp(field_name, "quantidadeLugares") == 0 || strcmp(field_name, "codLinha") == 0) 
         value = read_word(stdin);
     else
         value = read_inside_quotes();
 
+    // Abre para leitura e verifica a existência do arquivo binário
     FILE *bin_fp = fopen(bin_filename, "rb");
     if (bin_fp == NULL) {
         printf("Falha no processamento do arquivo.\n");
         return;
     }
 
+    // Escolhe entre os dois casos possíveis e procura pelo campo especificado
     if (which_case == Vehicle)
         search_vehicle_by_field(bin_fp, field_name, value);
     else
@@ -119,15 +134,18 @@ void search_by_field(CASE which_case){
     fclose(bin_fp);
 }
 
+// Função que insere registros no arquivo binário
 void insert(CASE which_case){
     char *bin_filename = read_word(stdin);
 
+    // Abre para leitura e atualização e verifica a existência do arquivo binário
     FILE *bin_fp = fopen(bin_filename, "r+b");
-    if (bin_fp == NULL) {
+    if (bin_fp == NULL){
         printf("Falha no processamento do arquivo.\n");
         return;
     }
 
+    // Insere os novos dados, verificando se isso foi possível
     bool inserted;
     if (which_case == Vehicle)
         insert_new_vehicle(bin_fp, &inserted);
@@ -136,6 +154,7 @@ void insert(CASE which_case){
 
     fclose(bin_fp);
 
+    // Se foi possível, imprime o binário na tela
     if (inserted)
         binarioNaTela(bin_filename);
 
@@ -143,17 +162,18 @@ void insert(CASE which_case){
 }
 
 void start_program(){
-    char *operation = read_word(stdin);
-    int which_case = atoi(operation);
+    char *operation = read_word(stdin); // código da operação 
+    int which_case = atoi(operation);   // caso veículo ou linha
     free(operation);
 
-    if (which_case == 1 || which_case == 2)
+    // Operações com valor ímpar são para veículo, com valor par, para linha
+    if (which_case == 1 || which_case == 2)         // Casos 1 e 2 são para gerar binário
         create_binary(which_case % 2);
-    else if (which_case == 3 || which_case == 4)
+    else if (which_case == 3 || which_case == 4)    // 3 e 4, para imprimir os dados
         print_data(which_case % 2);
-    else if (which_case == 5 || which_case == 6)
+    else if (which_case == 5 || which_case == 6)    // 5 e 6, para procura 
         search_by_field(which_case % 2);
-    else if (which_case == 7 || which_case == 8)
+    else if (which_case == 7 || which_case == 8)    // e 7 e 8, para inserção 
         insert(which_case % 2);
     else
         printf("Comando inválido\n");
