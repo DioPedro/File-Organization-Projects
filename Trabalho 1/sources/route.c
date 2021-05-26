@@ -25,7 +25,7 @@ struct _ROUTE_HEADER{
     char code_description[15];  // Descrição do codLinha
     char card_description[13];  // Descrição do aceitaCartão 
     char name_description[13];  // Descrição do nomeLinha
-    char color_description[24]; // Descrição  corLinha
+    char color_description[24]; // Descrição corLinha
 };
 
 // Tamanho dos campos variáveis não considera o '\0'
@@ -40,7 +40,7 @@ struct _ROUTE{
     char *color;            // corLinha
 };
 
-// Leitura do header de um arquivo binário
+// Leitura do cabeçalho de um arquivo binário
 static void read_header(FILE *bin_fp, ROUTE_HEADER *header){
     // Leitura dos principais campos do cabeçalho:
     //  status do arquivo, byte offset do próximo registro a ser inserido, 
@@ -58,7 +58,7 @@ static bool check_integrity(char *csv_field, ROUTE_HEADER *header){
     if (length == 0) 
         return FALSE;
     
-    // Se o começa com um '*', devemos considerar como campo removido
+    // Se o dado começa com um '*', devemos considerar como campo removido
     if (csv_field[0] == '*'){
         header->num_of_removeds++;
         return FALSE;
@@ -71,7 +71,7 @@ static bool check_integrity(char *csv_field, ROUTE_HEADER *header){
     return TRUE;
 }
 
-// Preenchimento do registro de um veículo, sempre verificando a integridade do campo do csv 
+// Preenchimento do registro de uma linha, sempre verificando a integridade do campo do csv
 static void fill_register(ROUTE *data, char **word, ROUTE_HEADER *header){
     // Caso o primeiro campo (codLinha) esteja certo, inserimos o inteiro no registro
     // Se não, desconsideramos o '*', inserimos o resto do inteiro, e marcamos como removido
@@ -112,7 +112,7 @@ static void fill_register(ROUTE *data, char **word, ROUTE_HEADER *header){
     }
 }
 
-// Escreve o header do arquivo csv no arquivo binário
+// Escreve o cabeçalho do arquivo csv no arquivo binário
 static void create_header(FILE *bin_fp, ROUTE_HEADER *header, WORDS *header_list){
     // Como começamos a escrita, o arquivo começa com status de "inconsistente"
     header->status = '0';
@@ -156,8 +156,8 @@ static void create_header(FILE *bin_fp, ROUTE_HEADER *header, WORDS *header_list
 static void write_data(FILE *bin_fp, ROUTE *data, ROUTE_HEADER *header){
     // Tamanho do registro =  
     // 4 bytes(codlinha)    + 1 byte(aceitaCartao) 
-    // 4 bytes(tamanhoCor) + 4 bytes(tamanhoLinha)
-    // corLinha             + nomeLinha         
+    // 4 bytes(tamanhoCor)  + 4 bytes(tamanhoLinha)
+    // corLinha             + nomeLinha
     data->register_length = 13 + data->color_length + data->name_length;
     
     // Escrita dos campos de tamanho fixo:
@@ -239,7 +239,7 @@ void create_route_binary(FILE *csv_fp, FILE *bin_fp){
         free_data(word_list, reg_line);
     }
 
-    // Após o fim das inserções, atualiza o cabeçalho 
+    // Após o fim das inserções, atualiza o cabeçalho
     update_header(bin_fp, &header);
 }
 
@@ -291,7 +291,7 @@ void print_route_register(ROUTE *data){
     printf("\n");
 }
 
-// Função auxiliar para liberar memória dinamicamente alocada no registro de Linha
+// Função auxiliar para liberar memória dinamicamente alocada no registro de linha
 static void free_dynamic_fields(ROUTE *data){
     if (data->name_length != 0)
         free(data->route_name);
@@ -553,7 +553,7 @@ void insert_new_route(FILE *bin_fp, bool *inserted){
 
     ROUTE_HEADER header;
     read_header(bin_fp, &header);
-    // Checking if the file is valid to be used
+    // Checando a consistência do arquivo
     if (header.status == '0'){
         printf("Falha no processamento do arquivo.\n");
         *inserted = FALSE;

@@ -15,7 +15,7 @@ struct _WORDS{
     int amount;
 };
 
-// Function that reads only one word
+// Função que copia uma única palavra
 char *read_word(FILE* input){
     char *str;
 
@@ -41,7 +41,7 @@ char *read_word(FILE* input){
     return str;
 }
 
-// Function that reads a string of undefined size and allocates the exact size of heap memory 
+// Função que copia uma string de tamanho indefinido e alloca a memória exata para a mesma
 char *read_line(FILE *input){
     char *str;
 
@@ -67,6 +67,7 @@ char *read_line(FILE *input){
     return str;
 }
 
+// Função que cria um vetor de strings
 WORDS *create_word_list(){
     WORDS *list = malloc(sizeof(WORDS));
     list->words = NULL;
@@ -75,7 +76,7 @@ WORDS *create_word_list(){
     return list;
 }
 
-// Function that particionates a string and saves it to the word list
+// Função que particiona uma string e a salva em uma word list
 bool get_part_from_str(char *source_str, int *source_pos, char **dest_str, char delimiter) {
     *dest_str = NULL;
     bool is_end_of_part = FALSE;
@@ -104,7 +105,7 @@ bool get_part_from_str(char *source_str, int *source_pos, char **dest_str, char 
     return FALSE;
 }
 
-// Function that parcionates a given string into its delimiters and save in a char** wordlist
+// Função que particiona uma string a partir de um delimitador e a salva em uma char **wordlist
 WORDS *split_list(char *string, char delimiter){
     WORDS *split_list = create_word_list();
 
@@ -123,6 +124,7 @@ WORDS *split_list(char *string, char delimiter){
     return split_list;
 }
 
+// Função que retorna o tamanho de um vetor de strings
 int get_word_list_length(WORDS *word_list){
     if (word_list != NULL)
         return word_list->amount;
@@ -130,6 +132,7 @@ int get_word_list_length(WORDS *word_list){
     return 0;
 }
 
+// Função que retorna um vetor de strings
 char **get_word_list(WORDS *word_list){
     if (word_list != NULL)
         return word_list->words;
@@ -137,6 +140,7 @@ char **get_word_list(WORDS *word_list){
     return NULL;
 }
 
+// Função que imprime um vetor de strings
 void print_word_list(WORDS *word_list){
     if (word_list == NULL)
         return;
@@ -147,6 +151,7 @@ void print_word_list(WORDS *word_list){
     printf("\n");
 }
 
+// Função que imprime uma string que não tem o caracter '\0'
 void print_string_without_terminator(char *string, int len, bool has_endl){
     for (int i = 0; i < len; i++)
         printf("%c", string[i]);
@@ -155,6 +160,7 @@ void print_string_without_terminator(char *string, int len, bool has_endl){
         printf("\n");
 }
 
+// Função que libera a memória de um vetor de strings
 void free_word_list(WORDS *word_list){
     if (word_list == NULL)
         return;
@@ -166,11 +172,12 @@ void free_word_list(WORDS *word_list){
     free(word_list);
 }
 
+// Função que le uma palavra dentro de aspas (")
 char *read_inside_quotes(){
     char cur_char = getc(stdin);
     bool is_first_quote = (cur_char == '"');
 
-    // If the first char isn't a quote, this function returns "NULO" and waits for the end of input
+    // Se o primeiro caracter não for aspas, essa função retorna "NULO" e espera terminar o input
     if (!is_first_quote){
         char *nil = malloc(5 * sizeof(char));
         strcpy(nil, "NULO");
@@ -190,7 +197,7 @@ char *read_inside_quotes(){
 
         cur_char = getc(stdin);
 
-        // When reads the another '"', stop reading
+        // Para de ler quando achar o segundo '"'
         is_first_quote = (cur_char != '"');
         if (!is_first_quote)
             break;
@@ -198,7 +205,7 @@ char *read_inside_quotes(){
         content[cur_len++] = cur_char;
     }
 
-    // Escape ' '
+    // Pulando caracters desnecessários
     cur_char = getc(stdin);
     while (cur_char != '\n' && cur_char != ' ')
         cur_char = getc(stdin);
@@ -212,6 +219,7 @@ char *read_inside_quotes(){
     return content;
 }
 
+// Função que compara duas strings sem o caracter delimitador
 bool compare_strings_whithout_terminator(char *stringA, char *stringB, int stringA_size) {
     if (strcmp("NULO", stringB) == 0 && stringA[0] == '\0')
         return TRUE;
@@ -227,6 +235,7 @@ bool compare_strings_whithout_terminator(char *stringA, char *stringB, int strin
     return TRUE;
 }
 
+// Função que coloca uma nova string em um vetor de strings
 void append_word(WORDS *base, char *new_word){
     if (base == NULL) {
         printf("WORDS nulo, encerrando função\n");
@@ -239,9 +248,8 @@ void append_word(WORDS *base, char *new_word){
 
 /* ------ General Utils ------ */
 
-// Stores header string fields with its respective value (@word), ignoring '\0' and filling with '@'
-// If needed, this function can return @word length
-// @size is the field size in bytes
+// Coloca nos campos de cabeçalho as respectivas strings ignorando \0 e preenchendo com @ quando
+// necessário
 void strings_creation(char *reg_field, char *word, int size){
     int cur_length = 0;
     for (; word[cur_length] != '\0'; cur_length++) 
@@ -255,35 +263,37 @@ void strings_creation(char *reg_field, char *word, int size){
         reg_field[size] = '@';
 }
 
-// When writing on bin file, '\0'was being a problem, although we
-// only wrote @size byte 
+// Escrevendo char a char de uma string no arquivo binário para ignorar o \0 
 void write_data_strings(FILE *bin_fp, char *data_field, int size){
     for (int i = 0; i < size; i++)
         fwrite(&data_field[i], sizeof(char), 1, bin_fp);
 }
 
-// Free primary memory after a CSV read
+// Liberando a memória primária
 void free_data(WORDS *word_list, char *reg_line){
     free_word_list(word_list);
     free(reg_line);
 }
 
-int register_exists(FILE *fp){
+// Função que retorna a existência de um registro
+bool register_exists(FILE *fp){
     char status = 'y';
     fread(&status, sizeof(char), 1, fp);
 
     return (status == '1');
 }
 
+// Função que vai para o fim do registro atual
+// @reg_len + 5 = tamanho total do registro
+// @cur_offset - @start_of_register = quanto do registro a gente já "avançou"
+// o que falta pro fim do registro = tamanho total - quanto já avançou
 void go_to_end_of_register(FILE *bin_fp, long long start_of_register, int reg_len){
-    // @reg_len + 5 = total register size
-    // @cur_offset - @start_of_register = how much we went through the register
-    // left to end of register = total register size - how much we went through the register
     long long int cur_offset = ftell(bin_fp);
     long long int next_reg_offset = reg_len + 5 - (cur_offset - start_of_register);
     fseek(bin_fp, next_reg_offset, SEEK_CUR);
 }
 
+// Função que marca um arquivo como em uso
 void set_file_in_use(FILE *bin_fp){
     char status = '0';
     fseek(bin_fp, 0, SEEK_SET);
