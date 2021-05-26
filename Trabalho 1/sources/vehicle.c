@@ -370,7 +370,7 @@ void read_vehicle_register(FILE *bin_fp, VEHICLE *valid_register, bool should_re
         fread(valid_register->model, sizeof(char), valid_register->model_length, bin_fp);
     }
 
-    // Veritica se existe o campo categoria e lê caso haja
+    // Verifica se existe o campo categoria e lê caso haja
     fread(&valid_register->category_length, sizeof(int), 1, bin_fp);
     if (valid_register->category_length > 0){
         valid_register->category = malloc(valid_register->category_length * sizeof(char));
@@ -393,14 +393,14 @@ void read_vehicle_bin(FILE *bin_fp){
     fseek(bin_fp, 8, SEEK_CUR); // Pulando para o byteOffset do proximo registro a ser inserido
     fread(&num_of_register, sizeof(int), 1, bin_fp);
 
-    if (num_of_register == 0) {
+    if (num_of_register == 0){
         printf("Registro inexistente.\n");       
         return;
     }
 
     // Vai para o primeiro registro e inicia a leitura
     fseek(bin_fp, 162, SEEK_CUR);
-    for (int i = 0; i < num_of_register; i++) {
+    for (int i = 0; i < num_of_register; i++){
         // Verifica se o registro existe e seu tamanho
         VEHICLE cur_register;
         fread(&cur_register.is_removed, sizeof(char), 1, bin_fp);
@@ -408,7 +408,7 @@ void read_vehicle_bin(FILE *bin_fp){
 
         // Se o registro existe, lemos ele, se não pulamos
         bool should_read = (cur_register.is_removed == '1');
-        if (!should_read) {
+        if (!should_read){
             // Se o registro está marcado como removido, a leitura não deve considerar 
             // ele, pois ela considera apenas registros que existem
             i--;
@@ -423,7 +423,7 @@ void read_vehicle_bin(FILE *bin_fp){
 }
 
 // Verifica qual campo o usuário inseriu para ser buscado
-static VEHICLE_FIELD get_field(char *field) {
+static VEHICLE_FIELD get_field(char *field){
     if (strcmp(field, "prefixo") == 0)
         return Prefix;
     
@@ -443,7 +443,7 @@ static VEHICLE_FIELD get_field(char *field) {
 }
 
 // Pula campos que não devem ser lidos, para evitar leituras desnecessárias
-static void read_until_field(FILE *bin_fp, VEHICLE_FIELD which_field) {
+static void read_until_field(FILE *bin_fp, VEHICLE_FIELD which_field){
     // Esse loop para no campo anterior ao campo que vai ser lido, ou seja,
     // se queremos ler a quantidadeLugares, o loop pula o prefixo e a data 
     for (int i = 0; i < which_field; i++){
@@ -457,7 +457,7 @@ static void read_until_field(FILE *bin_fp, VEHICLE_FIELD which_field) {
             fseek(bin_fp, 8, SEEK_CUR);
 
         int size;
-        if (i == Model) {
+        if (i == Model){
             fread(&size, sizeof(int), 1, bin_fp);
             fseek(bin_fp, size, SEEK_CUR);
         }
@@ -542,7 +542,7 @@ void search_vehicle_by_field(FILE *bin_fp, char *field, char *value){
                 // data pode ser nulo, então devemos comparar mais cuidadosamente
                 char date[10];
                 case Date:
-                    fread(prefix, sizeof(char), 10, bin_fp);
+                    fread(date, sizeof(char), 10, bin_fp);
                     are_equal = compare_strings_whithout_terminator(date, value, 10);
                     break;
 
@@ -550,7 +550,10 @@ void search_vehicle_by_field(FILE *bin_fp, char *field, char *value){
                 int num_of_seats;
                 case Num_of_seats:
                     fread(&num_of_seats, sizeof(int), 1, bin_fp);
-                    are_equal = (num_of_seats == atoi(value));
+                    if (strcmp(value, "NULO") == 0)
+                        are_equal = (num_of_seats == -1);
+                    else
+                        are_equal = (num_of_seats == atoi(value));
                     break;
                 
                 default:
