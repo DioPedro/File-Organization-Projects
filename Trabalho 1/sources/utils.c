@@ -186,7 +186,8 @@ char *read_inside_quotes(){
 
         return nil;
     }
-
+    
+    // Se leu uma aspas, continua leitura até ler a segunda
     int cur_len = 0, size = 16;
     char *content = malloc(size * sizeof(char));
     while (is_first_quote){

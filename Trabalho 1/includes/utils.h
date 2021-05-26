@@ -15,21 +15,6 @@
 #include <string.h>
 #include "bool.h"
 
-typedef enum { 
-    Janeiro = 1, 
-    Fevereiro, 
-    Marco, 
-    Abril,
-    Maio,  
-    Junho, 
-    Julho, 
-    Agosto, 
-    Setembro, 
-    Outubro, 
-    Novembro, 
-    Dezembro
-} MONTH;
-
 typedef struct _WORDS WORDS;
 
 // String related utils
