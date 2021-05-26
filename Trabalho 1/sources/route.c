@@ -428,6 +428,9 @@ void search_route_by_field(FILE *bin_fp, char *field, char *value){
     fseek(bin_fp, 8, SEEK_CUR);
     fread(&header.num_of_regs, sizeof(int), 1, bin_fp);
 
+    // Cria um booleano para caso haja registros e não ache nenhum 
+    bool was_printed = FALSE;
+
     // Pula para o início do primero registro e inicia a leitura
     fseek(bin_fp, 69, SEEK_CUR);
     for (int i = 0; i < header.num_of_regs; i++){
@@ -499,11 +502,16 @@ void search_route_by_field(FILE *bin_fp, char *field, char *value){
             ROUTE valid_register;
             read_route_register(bin_fp, &valid_register, TRUE);
             print_route_register(&valid_register);
+            was_printed = TRUE;
 
             free_dynamic_fields(&valid_register);
         } else {
             go_to_end_of_register(bin_fp, start_of_register, reg_len);
         }
+    }
+
+    if (!was_printed){
+        printf("Registro inexistente.\n");
     }
 }
 
