@@ -1,3 +1,12 @@
+/* 
+**************************************************
+*             TRABALHO 1 de Arquivos             *
+* Alunos:                                        *
+*  - Diógenes Silva Pedro, nUSP: 11883476        *
+*  - Victor Henrique de Sa Silva, nUSP: 11795759 *
+**************************************************
+*/  
+
 #include "../includes/btree.h"
 #include "../includes/utils.h"
 #include <stdio.h>
@@ -123,15 +132,6 @@ btree *init_tree() {
     return new_btree;
 }
 
-// static void read_header(FILE *index_fp, header *index_header) {
-//     fseek(index_fp, 0, SEEK_SET);
-//     printf("ponteiro esta na posicao %ld\n", ftell(index_fp));
-//     fread(&index_header->status, sizeof(char), 1, index_fp);
-//     fread(&index_header->root, sizeof(int), 1, index_fp);
-//     fread(&index_header->next_RRN, sizeof(int), 1, index_fp);
-//     fread(&index_header->thrash, sizeof(char), 68, index_fp);
-// }
-
 void read_page(FILE *index_fp, page *data_reg) { 
     fread(&(data_reg->is_leaf), sizeof(char), 1, index_fp);
     fread(&(data_reg->num_of_keys), sizeof(int), 1, index_fp);
@@ -163,14 +163,12 @@ long long int recursive_search(FILE *index_fp, int rrn, int to_search) {
         return recursive_search(index_fp, content.p[pos], to_search);
 }
 
-// long long int search_key(FILE *index_fp, int root_rrn, int to_search) {
-//     header index_header;
-//     read_header(index_fp, &index_header);
-//     if (index_header.root ==  -1)   // Nao tem nenhum nó ainda
-//         return -1;
+long long int search_key(btree *tree, int to_search) {
+    if (tree->btree_header->root ==  -1)   // Nao tem nenhum nó ainda
+        return -1;
     
-//     return recursive_search(index_fp, index_header.root, to_search);
-// }
+    return recursive_search(tree->btree, tree->btree_header->root, to_search);
+}
 
 void split(FILE *index_fp, header *btree_header, page *to_split, promo_page *promoted) {
     page new_page;
@@ -370,23 +368,25 @@ void destroy_btree(btree *tree) {
 int main() {
     btree *btree = init_tree();
 
-    insert(btree, 'A', 123124);
-    insert(btree, 'B', 1512);
-    insert(btree, 'C', 1251251);
-    insert(btree, 'D', 123124);
-    insert(btree, 'E', 123124);
-    insert(btree, 'P', 123124);
-    insert(btree, 'S', 123124);
-    insert(btree, 'O', 123124);
-    insert(btree, 'F', 123124);
-    insert(btree, 'G', 123124);
-    insert(btree, 'H', 123124);
-    insert(btree, 'I', 123124);
-    insert(btree, 'J', 123124);
-    insert(btree, 'K', 123124);
-    insert(btree, 'L', 123124);
-    insert(btree, 'M', 123124);
-    insert(btree, 'N', 123124);
+    insert(btree, 'A', 1);
+    insert(btree, 'B', 2);
+    insert(btree, 'C', 3);
+    insert(btree, 'D', 4);
+    insert(btree, 'E', 5);
+    insert(btree, 'P', 6);
+    insert(btree, 'S', 7);
+    insert(btree, 'O', 8);
+    insert(btree, 'F', 9);
+    insert(btree, 'H', 10);
+    insert(btree, 'G', 11);
+    insert(btree, 'I', 12);
+    insert(btree, 'J', 13);
+    insert(btree, 'K', 14);
+    insert(btree, 'L', 15);
+    insert(btree, 'M', 16);
+    insert(btree, 'N', 17);
+
+    printf("Offset de V: %lld\n", search_key(btree, 'V'));
 
     destroy_btree(btree);
 
