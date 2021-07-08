@@ -161,6 +161,81 @@ void insert(CASE which_case){
     free(bin_filename);
 }
 
+void create_index(CASE which_case){
+    char *bin_filename = read_word(stdin);
+    char *index_filename = read_word(stdin);
+    
+    // Cria arquivo de indices com o nome especificado
+    FILE *bin_fp = fopen(bin_filename, "rb");
+    if (bin_fp == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+    if (which_case == Vehicle)
+        create_vehicle_index_file(bin_fp, index_filename);
+    else 
+        create_route_index_file(bin_fp, index_filename);
+    binarioNaTela(index_filename);
+
+    free(bin_filename);
+    free(index_filename);
+    fclose(bin_fp);
+}
+
+void search_in_index_file(CASE which_case){
+    char *bin_filename = read_word(stdin);
+    
+    // Cria arquivo de indices com o nome especificado
+    FILE *bin_fp = fopen(bin_filename, "rb");
+    if (bin_fp == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+    if (which_case == Vehicle)
+        search_vehicle(bin_fp);
+    else 
+        search_route(bin_fp);
+    
+    free(bin_filename);
+    fclose(bin_fp);
+}
+
+// Função que insere registros no arquivo binário
+void extended_insert(CASE which_case){
+    char *bin_filename = read_word(stdin);
+
+    // Abre para leitura e atualização e verifica a existência do arquivo binário
+    FILE *bin_fp = fopen(bin_filename, "r+b");
+    if (bin_fp == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+    char *index_filename = read_word(stdin);
+    btree *tree = load_btree(index_filename);
+    if  (tree == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+    // Insere os novos dados, verificando se isso foi possível
+    bool inserted;
+    if (which_case == Vehicle)
+        insert_vehicle_into_index_and_bin(bin_fp, tree, &inserted);
+    else 
+        insert_route_into_index_and_bin(bin_fp, tree, &inserted);
+
+    fclose(bin_fp);
+
+    // Se foi possível, imprime o binário na tela
+    if (inserted)
+        binarioNaTela(bin_filename);
+
+    free(bin_filename);
+}
+
 void start_program(){
     char *operation = read_word(stdin); // código da operação 
     int which_case = atoi(operation);   // caso veículo ou linha
@@ -173,8 +248,14 @@ void start_program(){
         print_data(which_case % 2);
     else if (which_case == 5 || which_case == 6)    // 5 e 6, para procura 
         search_by_field(which_case % 2);
-    else if (which_case == 7 || which_case == 8)    // e 7 e 8, para inserção 
+    else if (which_case == 7 || which_case == 8)    // 7 e 8, para inserção 
         insert(which_case % 2);
+    else if (which_case == 9 || which_case == 10)   // 9 e 10, criam arquivo de indice
+        create_index(which_case % 2);
+    else if (which_case == 11 || which_case == 12)  // 11 e 12, procuram chave pelo arquivo de indice
+        create_index(which_case % 2);
+    else if (which_case == 13 || which_case == 14)  // 13 e 14, insere novos valores no binario e no indice
+        extended_insert(which_case % 2);
     else
         printf("Comando inválido\n");
 }

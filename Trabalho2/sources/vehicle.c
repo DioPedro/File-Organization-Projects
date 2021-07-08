@@ -683,3 +683,167 @@ void insert_new_vehicle(FILE *bin_fp, bool *inserted){
     update_header(bin_fp, &header);
     *inserted = TRUE;
 }
+
+static void read_and_insert(FILE *bin_fp, btree *tree, long long int offset){
+    char prefix[6];
+    fread(prefix, sizeof(char), 5, bin_fp);
+    prefix[5] = '\0';
+
+    int new_key = convertePrefixo(prefix);
+    insert_in_btree(tree, new_key, offset);
+
+    // Indo para o fim do registro
+    fseek(bin_fp, 18, SEEK_CUR);
+    for (int i = 0; i < 2; i++) {
+        int size;
+        fread(&size, sizeof(int), 1, bin_fp);
+        fseek(bin_fp, size, SEEK_CUR);
+    }
+}
+
+void create_vehicle_index_file(FILE *bin_fp, char *index_filename){
+    btree *new_tree = init_tree(index_filename);
+    if (new_tree == NULL) {
+        printf("Falha no processamento do arquivo\n");
+        return;
+    }
+
+    // Verifica a consistência do arquivo
+    char status;
+    fread(&status, sizeof(char), 1, bin_fp);
+    if (status == '0'){
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+    
+    // Leitura do número de registros para ter controle das leituras
+    int num_of_register;
+    fseek(bin_fp, 8, SEEK_CUR); // Pulando para o byteOffset do proximo registro a ser inserido
+    fread(&num_of_register, sizeof(int), 1, bin_fp);
+
+    if (num_of_register == 0){
+        printf("Registro inexistente.\n");       
+        return;
+    }
+
+    // Vai para o primeiro registro e inicia a leitura
+    fseek(bin_fp, 162, SEEK_CUR);
+    for (int i = 0; i < num_of_register; i++){
+
+        // Verifica se o registro existe e seu tamanho
+        VEHICLE cur_register;
+        fread(&cur_register.is_removed, sizeof(char), 1, bin_fp);
+        fread(&cur_register.register_length, sizeof(int), 1, bin_fp);
+
+        // Se o registro existe, lemos ele, se não pulamos
+        bool should_read = (cur_register.is_removed == '1');
+        if (!should_read){
+            // Se o registro está marcado como removido, a leitura não deve considerar 
+            // ele, pois ela considera apenas registros que existem
+            i--;
+            fseek(bin_fp, cur_register.register_length, SEEK_CUR);
+        } else {
+            long long int offset = ftell(bin_fp) - 5;
+            read_and_insert(bin_fp, new_tree, offset);
+        }
+    }  
+
+    update_tree_header(new_tree);
+    destroy_btree(new_tree);
+}
+
+void search_vehicle(FILE *bin_fp){
+    // Verifica a consistência do arquivo
+    char status;
+    fread(&status, sizeof(char), 1, bin_fp);
+    if (status == '0'){
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+    
+    char *index_filename = read_word(stdin);
+    char *field_to_read = read_word(stdin);
+    
+    btree *tree = load_btree(index_filename);
+    if  (tree == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+    char *prefix = read_inside_quotes();
+    int key = convertePrefixo(prefix);
+    
+    long long int offset = search_key(tree, key);
+    if (offset == -1) {
+        printf("Registro inexistente.\n");
+        return;
+    }
+
+    fseek(bin_fp, offset, SEEK_SET);
+    VEHICLE valid_register;
+    read_vehicle_register(bin_fp, &valid_register, TRUE);
+    print_vehicle_register(&valid_register);
+
+    free_dynamic_fields(&valid_register);
+    free(index_filename);
+    free(field_to_read);
+    free(prefix);
+    destroy_btree(tree);
+}
+
+void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted){
+    // Vai para o início do arquivo binário para verificar se está consistente
+    // e, caso esteja, muda para inconsistente para iniciarmos as inserções
+    fseek(bin_fp, 0, SEEK_SET);
+
+    VEHICLE_HEADER header;
+    read_header(bin_fp, &header);
+
+    // Checando a consistência do arquivo
+    if (header.status == '0'){
+        printf("Falha no processamento do arquivo.\n");
+        *inserted = FALSE;
+        return;
+    } else {
+        set_file_in_use(bin_fp);
+    }
+
+    // Vai para o byte Offset do próximo registro a ser inserido 
+    fseek(bin_fp, header.next_reg, SEEK_SET);
+
+    int num_registers = -1;
+    scanf("%d", &num_registers);
+    char cur_char = getc(stdin);
+    while (cur_char != '\n' && cur_char != ' ')
+        cur_char = getc(stdin);
+
+    // Inicia as inserções
+    for (int i = 0; i < num_registers; i++){
+        // Lê as entradas, verificando se foram inseridas corretamente
+        WORDS *entries  = read_entries();
+        int num_of_entries = get_word_list_length(entries);
+        if (num_of_entries != 6){
+            printf("Faltam dados\n");
+            *inserted = FALSE;
+            return;
+        }
+        
+        // Inserindo no arquivo de indices
+        char **values = get_word_list(entries);
+        int new_key = convertePrefixo(values[0]);
+        insert_in_btree(tree, new_key, header.next_reg);
+
+        // Cria o registro e insere no binário
+        VEHICLE new_vehicle;
+        fill_register(&new_vehicle, values, &header);
+        write_data(bin_fp, &new_vehicle, &header);
+        
+        free_word_list(entries);
+    }
+    
+    // Atualiza o cabeçalho
+    update_header(bin_fp, &header);
+    update_tree_header(tree);
+    destroy_btree(tree);
+    *inserted = TRUE;
+}
