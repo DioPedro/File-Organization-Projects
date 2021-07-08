@@ -534,7 +534,7 @@ static WORDS *read_entries(){
     if (accepts_card == NULL)
         return NULL;
     else
-        append_word(entries, accepts_card);
+        append_word(entries, accepts_card);    
 
     // Lê o nomeLinha e insere na estrutura
     char *route_name = read_inside_quotes();
@@ -549,7 +549,7 @@ static WORDS *read_entries(){
         return NULL;
     else
         append_word(entries, color);
-
+   
     return entries;
 }
 
@@ -617,11 +617,12 @@ static void read_and_insert(FILE *bin_fp, btree *tree, long long int offset){
     }
 }
 
-void create_route_index_file(FILE *bin_fp, char *index_filename){
+bool create_route_index_file(FILE *bin_fp, char *index_filename){
     btree *new_tree = init_tree(index_filename);
     if (new_tree == NULL) {
         printf("Falha no processamento do arquivo\n");
-        return;
+    
+        return FALSE;
     }
 
     // Verifica a consistência do arquivo
@@ -629,7 +630,8 @@ void create_route_index_file(FILE *bin_fp, char *index_filename){
     fread(&status, sizeof(char), 1, bin_fp);
     if (status == '0'){
         printf("Falha no processamento do arquivo.\n");
-        return;
+        destroy_btree(new_tree);
+        return FALSE;
     }
 
     // Leitura do número de registros para ter controle das leituras
@@ -639,7 +641,7 @@ void create_route_index_file(FILE *bin_fp, char *index_filename){
 
     if (num_of_register == 0){
         printf("Registro inexistente.\n");
-        return;
+        return FALSE;
     }
 
     // Vai para o primeiro registro e inicia a leitura
@@ -666,7 +668,7 @@ void create_route_index_file(FILE *bin_fp, char *index_filename){
     
     update_tree_header(new_tree);
     destroy_btree(new_tree);
-    free(index_filename);
+    return TRUE;
 }
 
 void search_route(FILE *bin_fp){
@@ -684,6 +686,8 @@ void search_route(FILE *bin_fp){
     btree *tree = load_btree(index_filename);
     if  (tree == NULL) {
         printf("Falha no processamento do arquivo.\n");
+        free(index_filename);
+        free(field_to_read);
         return;
     }
 
@@ -693,6 +697,9 @@ void search_route(FILE *bin_fp){
     long long int offset = search_key(tree, key);
     if (offset == -1) {
         printf("Registro inexistente.\n");
+        free(index_filename);
+        free(field_to_read);
+        destroy_btree(tree);
         return;
     }
 
@@ -717,6 +724,7 @@ void insert_route_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted){
     // Checando a consistência do arquivo
     if (header.status == '0'){
         printf("Falha no processamento do arquivo.\n");
+        destroy_btree(tree);
         *inserted = FALSE;
         return;
     } else {
@@ -752,6 +760,8 @@ void insert_route_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted){
         ROUTE new_route;
         fill_register(&new_route, values, &header);
         write_data(bin_fp, &new_route, &header);
+        header.next_reg = ftell(bin_fp);
+
         free_word_list(entries);
     }
     

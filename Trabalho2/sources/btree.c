@@ -65,11 +65,28 @@ int bin_search(int keys[], int min, int max, int searched) {
 
 btree *load_btree(char *filename) {
     btree *new_tree = malloc(sizeof(btree));
-    new_tree->btree = fopen(filename, "wb+");
-    if (new_tree->btree == NULL)
+    if (new_tree == NULL)
         return NULL;
+    
+    new_tree->btree = fopen(filename, "r+b");
+    if (new_tree->btree == NULL) {
+        free(new_tree);
+        return NULL;
+    }
+    
+    new_tree->btree_header = malloc(sizeof(header));
+    if (new_tree->btree_header == NULL) {
+        fclose(new_tree->btree);
+        free(new_tree);
+        return NULL;
+    }
 
     fread(&new_tree->btree_header->status, sizeof(char), 1, new_tree->btree);
+    if (new_tree->btree_header->status == '0') {
+        destroy_btree(new_tree);
+        return NULL;
+    }
+
     fread(&new_tree->btree_header->root, sizeof(int), 1, new_tree->btree);
     fread(&new_tree->btree_header->next_RRN, sizeof(int), 1, new_tree->btree);
     fseek(new_tree->btree, 68, SEEK_CUR);
@@ -96,7 +113,7 @@ char *generate_thrash(int len) {
 }
 
 void write_page(FILE *index_fp, page to_insert) {
-    fseek(index_fp, to_insert.RRN  * 77, SEEK_SET);
+    fseek(index_fp, (to_insert.RRN + 1)  * PAGE_SIZE, SEEK_SET);
     fwrite(&to_insert.is_leaf, sizeof(char), 1, index_fp);
     fwrite(&to_insert.num_of_keys, sizeof(int), 1, index_fp);
     fwrite(&to_insert.RRN, sizeof(int), 1, index_fp);
@@ -145,13 +162,18 @@ void write_header(FILE *index_fp, int root_rrn, char status, int to_insert_rrn) 
 
 btree *init_tree(char *filename) {
     btree *new_btree = malloc(sizeof(btree));
-    new_btree->btree = fopen(filename, "wb+");
-    if (new_btree->btree == NULL) 
+    if (new_btree == NULL) 
         return NULL;
+
+    new_btree->btree = fopen(filename, "wb+");
+    if (new_btree->btree == NULL) {
+        free(new_btree);
+        return NULL;
+    }
     
     new_btree->btree_header = malloc(sizeof(header));
     new_btree->btree_header->root = -1;
-    new_btree->btree_header->next_RRN = 1;
+    new_btree->btree_header->next_RRN = 0;
     new_btree->btree_header->status = '0';
     write_header(new_btree->btree, new_btree->btree_header->root, new_btree->btree_header->status, new_btree->btree_header->next_RRN);
 
@@ -175,7 +197,7 @@ void read_page(FILE *index_fp, page *data_reg) {
 
 long long int recursive_search(FILE *index_fp, int rrn, int to_search) {
     page content;
-    fseek(index_fp, PAGE_SIZE * rrn, SEEK_SET);
+    fseek(index_fp, PAGE_SIZE * (rrn + 1), SEEK_SET);
     read_page(index_fp, &content);
     
     int pos = bin_search(content.c, 0, content.num_of_keys - 1, to_search);
@@ -190,8 +212,11 @@ long long int recursive_search(FILE *index_fp, int rrn, int to_search) {
 }
 
 long long int search_key(btree *tree, int to_search) {
-    if (tree->btree_header->root ==  -1)   // Nao tem nenhum nó ainda
+    if (tree->btree_header->root ==  -1) {
+        // Nao tem nenhum nó ainda
+        destroy_btree(tree);
         return -1;
+    }          
     
     return recursive_search(tree->btree, tree->btree_header->root, to_search);
 }
@@ -235,39 +260,6 @@ void split(FILE *index_fp, header *btree_header, page *to_split, promo_page *pro
     new_page.RRN = btree_header->next_RRN; // novo nó
     new_page.is_leaf = to_split->is_leaf;
 
-    // bool was_added = FALSE;
-    // int p[6], keys[5];
-    // long long int pr[5];
-
-    // // insere num vetor auxiliar os elementos ordenados
-    // for (int i = 0; i < TREE_ORDER ; i++) {
-    //     if (i == TREE_ORDER - 1 && !was_added) {
-    //         keys[i] = promoted->value;
-    //         p[i] = promoted->left_rrn;
-    //         p[i + 1] = to_split->p[i];
-    //         pr[i] = promoted->offset;
-    //         break;   
-    //     }
-
-    //     if (was_added) {
-    //         keys[i] = to_split->c[i - 1];
-    //         pr[i] = to_split->pr[i - 1];
-    //         p[i + 1] = to_split->p[i];
-    //     }
-
-    //     if (!was_added && promoted->value < to_split->c[i]) {
-    //         keys[i] = promoted->value;
-    //         pr[i] = promoted->offset;
-    //         p[i] = promoted->left_rrn;
-    //         p[i + 1] = to_split->p[i];
-    //         was_added = TRUE;
-    //     } else if (!was_added) {
-    //         keys[i] = to_split->c[i];
-    //         p[i] = to_split->p[i];
-    //         pr[i] = to_split->pr[i];
-    //     }
-    // }
-
     int c[5], p[6];
     long long int pr[5];
     ordered_insertion(index_fp, to_split, promoted, c, p, pr, TREE_ORDER - 1);
@@ -299,42 +291,7 @@ void split(FILE *index_fp, header *btree_header, page *to_split, promo_page *pro
     promoted->left_rrn = to_split->RRN;
 }
 
-void insert_inner(FILE *index_fp, page *curr_page, promo_page *promoted_page) {
-    // fseek(index_fp, 1, SEEK_CUR); // Pula is_leaf
-
-    // int c[5], p[6];
-    // long long int pr[5];
-
-    // // insere num vetor auxiliar os elementos ordenados
-    // bool was_added = FALSE;
-    // for (int i = 0; i <= curr_page->num_of_keys; i++) {
-    //     if (i == curr_page->num_of_keys && !was_added) {
-    //         c[i] = promoted_page->value;
-    //         p[i] = promoted_page->left_rrn;
-    //         p[i + 1] = curr_page->p[i];
-    //         pr[i] = promoted_page->offset;
-    //         break;   
-    //     }
-
-    //     if (was_added) {
-    //         c[i] = curr_page->c[i - 1];
-    //         pr[i] = curr_page->pr[i - 1];
-    //         p[i + 1] = curr_page->p[i];
-    //     }
-
-    //     if (!was_added && promoted_page->value < curr_page->c[i]) {
-    //         c[i] = promoted_page->value;
-    //         pr[i] = promoted_page->offset;
-    //         p[i] = promoted_page->left_rrn;
-    //         p[i + 1] = curr_page->p[i];
-    //         was_added = TRUE;
-    //     } else if (!was_added) {
-    //         c[i] = curr_page->c[i];
-    //         p[i] = curr_page->p[i];
-    //         pr[i] = curr_page->pr[i];
-    //     }
-    // }
-    
+void insert_inner(FILE *index_fp, page *curr_page, promo_page *promoted_page) {   
     int c[5], p[6];
     long long int pr[5];
     ordered_insertion(index_fp, curr_page, promoted_page, c, p, pr, curr_page->num_of_keys);
@@ -352,7 +309,7 @@ void insert_inner(FILE *index_fp, page *curr_page, promo_page *promoted_page) {
 // Td indica que esta certo
 promo_page recursive_insert(FILE *index_fp, header *index_header, int curr_rrn, int key, long long int offset) {
     page content;
-    fseek(index_fp, PAGE_SIZE * curr_rrn, SEEK_SET);
+    fseek(index_fp, PAGE_SIZE * (curr_rrn  + 1), SEEK_SET);
     read_page(index_fp, &content);
     
     promo_page promoted_page;
@@ -372,7 +329,7 @@ promo_page recursive_insert(FILE *index_fp, header *index_header, int curr_rrn, 
             index_header->next_RRN++;
         }
 
-        fseek(index_fp, curr_rrn * PAGE_SIZE, SEEK_SET);
+        fseek(index_fp, (curr_rrn + 1) * PAGE_SIZE, SEEK_SET);
         write_page(index_fp, content);
 
         return promoted_page;
@@ -402,7 +359,7 @@ promo_page recursive_insert(FILE *index_fp, header *index_header, int curr_rrn, 
         }
         
         // Reescrevendo a pagina
-        fseek(index_fp, curr_rrn * PAGE_SIZE, SEEK_SET);
+        fseek(index_fp, (curr_rrn + 1) * PAGE_SIZE, SEEK_SET);
         write_page(index_fp, content);
     } 
     return promoted_page;
@@ -432,31 +389,3 @@ void destroy_btree(btree *tree) {
     free(tree->btree_header);
     free(tree);
 }
-
-// int main() {
-//     btree *btree = init_tree();
-
-//     insert(btree, 'A', 1);
-//     insert(btree, 'B', 2);
-//     insert(btree, 'C', 3);
-//     insert(btree, 'D', 4);
-//     insert(btree, 'E', 5);
-//     insert(btree, 'P', 6);
-//     insert(btree, 'S', 7);
-//     insert(btree, 'O', 8);
-//     insert(btree, 'F', 9);
-//     insert(btree, 'H', 10);
-//     insert(btree, 'G', 11);
-//     insert(btree, 'I', 12);
-//     insert(btree, 'J', 13);
-//     insert(btree, 'K', 14);
-//     insert(btree, 'L', 15);
-//     insert(btree, 'M', 16);
-//     insert(btree, 'N', 17);
-
-//     printf("Offset de V: %lld\n", search_key(btree, 'V'));
-
-//     destroy_btree(btree);
-
-//     return 0;
-// }

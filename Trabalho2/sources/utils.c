@@ -180,7 +180,7 @@ char *read_inside_quotes(){
     if (!is_first_quote){
         char *nil = malloc(5 * sizeof(char));
         strcpy(nil, "NULO");
-        while (cur_char != ' ' && cur_char != '\n')
+        while (cur_char != ' ' && cur_char != '\n' && cur_char != EOF)
             cur_char = getc(stdin);
 
         return nil;
@@ -204,12 +204,11 @@ char *read_inside_quotes(){
         
         content[cur_len++] = cur_char;
     }
-
     // Pulando caracters desnecessários
     cur_char = getc(stdin);
-    while (cur_char != '\n' && cur_char != ' ')
+    while (cur_char != '\n' && cur_char != EOF && cur_char != ' ')
         cur_char = getc(stdin);
-
+    
     if (cur_len == 0)
         return NULL;
 

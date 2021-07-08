@@ -169,14 +169,19 @@ void create_index(CASE which_case){
     FILE *bin_fp = fopen(bin_filename, "rb");
     if (bin_fp == NULL){
         printf("Falha no processamento do arquivo.\n");
+        free(bin_filename);
+        free(index_filename);
         return;
     }
 
+    bool was_created = FALSE;
     if (which_case == Vehicle)
-        create_vehicle_index_file(bin_fp, index_filename);
+        was_created = create_vehicle_index_file(bin_fp, index_filename);
     else 
-        create_route_index_file(bin_fp, index_filename);
-    binarioNaTela(index_filename);
+        was_created = create_route_index_file(bin_fp, index_filename);
+    
+    if (was_created)
+        binarioNaTela(index_filename);
 
     free(bin_filename);
     free(index_filename);
@@ -190,6 +195,7 @@ void search_in_index_file(CASE which_case){
     FILE *bin_fp = fopen(bin_filename, "rb");
     if (bin_fp == NULL){
         printf("Falha no processamento do arquivo.\n");
+        free(bin_filename);
         return;
     }
 
@@ -210,6 +216,7 @@ void extended_insert(CASE which_case){
     FILE *bin_fp = fopen(bin_filename, "r+b");
     if (bin_fp == NULL){
         printf("Falha no processamento do arquivo.\n");
+        free(bin_filename);
         return;
     }
 
@@ -217,6 +224,9 @@ void extended_insert(CASE which_case){
     btree *tree = load_btree(index_filename);
     if  (tree == NULL) {
         printf("Falha no processamento do arquivo.\n");
+        free(bin_filename);
+        free(index_filename);
+        fclose(bin_fp);
         return;
     }
 
@@ -231,8 +241,9 @@ void extended_insert(CASE which_case){
 
     // Se foi possível, imprime o binário na tela
     if (inserted)
-        binarioNaTela(bin_filename);
+        binarioNaTela(index_filename);
 
+    free(index_filename);
     free(bin_filename);
 }
 
@@ -253,7 +264,7 @@ void start_program(){
     else if (which_case == 9 || which_case == 10)   // 9 e 10, criam arquivo de indice
         create_index(which_case % 2);
     else if (which_case == 11 || which_case == 12)  // 11 e 12, procuram chave pelo arquivo de indice
-        create_index(which_case % 2);
+        search_in_index_file(which_case % 2);
     else if (which_case == 13 || which_case == 14)  // 13 e 14, insere novos valores no binario e no indice
         extended_insert(which_case % 2);
     else

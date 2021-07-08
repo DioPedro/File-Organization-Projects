@@ -3,6 +3,12 @@ Trabalho\ 1/*.bin
 Trabalho\ 1/.vscode
 Trabalho2/programaTrab
 Trabalho2/*.bin
+Trabalho2/*.in
+Trabalho2/*.out
+Trabalho2/debug.py
+Trabalho2/debug_files
+Trabalho2/casos_abertos
+Trabalho2/hex_files
 Trabalho2/binFiles
 Trabalho2/.vscode
 Trabalho2/casosT

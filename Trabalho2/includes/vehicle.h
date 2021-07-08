@@ -21,7 +21,7 @@ void create_vehicle_binary(FILE *csv_fp, FILE *bin_fp);
 void read_vehicle_bin(FILE *bin_fp);
 void search_vehicle_by_field(FILE *bin_fp, char *field, char *value);
 void insert_new_vehicle(FILE *bin_fp, bool *inserted);
-void create_vehicle_index_file(FILE *bin_fp, char *index_filename);
+bool create_vehicle_index_file(FILE *bin_fp, char *index_filename);
 void search_vehicle(FILE *bin_fp);
 void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted);
 

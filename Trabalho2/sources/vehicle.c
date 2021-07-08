@@ -657,7 +657,7 @@ void insert_new_vehicle(FILE *bin_fp, bool *inserted){
     int num_registers = -1;
     scanf("%d", &num_registers);
     char cur_char = getc(stdin);
-    while (cur_char != '\n' && cur_char != ' ')
+    while (cur_char != '\n' && cur_char != ' ' && cur_char != EOF)
         cur_char = getc(stdin);
 
     // Inicia as inserções
@@ -701,11 +701,11 @@ static void read_and_insert(FILE *bin_fp, btree *tree, long long int offset){
     }
 }
 
-void create_vehicle_index_file(FILE *bin_fp, char *index_filename){
+bool create_vehicle_index_file(FILE *bin_fp, char *index_filename){
     btree *new_tree = init_tree(index_filename);
     if (new_tree == NULL) {
         printf("Falha no processamento do arquivo\n");
-        return;
+        return FALSE;
     }
 
     // Verifica a consistência do arquivo
@@ -713,7 +713,8 @@ void create_vehicle_index_file(FILE *bin_fp, char *index_filename){
     fread(&status, sizeof(char), 1, bin_fp);
     if (status == '0'){
         printf("Falha no processamento do arquivo.\n");
-        return;
+        destroy_btree(new_tree);
+        return FALSE;
     }
     
     // Leitura do número de registros para ter controle das leituras
@@ -723,7 +724,7 @@ void create_vehicle_index_file(FILE *bin_fp, char *index_filename){
 
     if (num_of_register == 0){
         printf("Registro inexistente.\n");       
-        return;
+        return FALSE;
     }
 
     // Vai para o primeiro registro e inicia a leitura
@@ -750,6 +751,7 @@ void create_vehicle_index_file(FILE *bin_fp, char *index_filename){
 
     update_tree_header(new_tree);
     destroy_btree(new_tree);
+    return TRUE;
 }
 
 void search_vehicle(FILE *bin_fp){
@@ -767,15 +769,22 @@ void search_vehicle(FILE *bin_fp){
     btree *tree = load_btree(index_filename);
     if  (tree == NULL) {
         printf("Falha no processamento do arquivo.\n");
+        free(index_filename);
+        free(field_to_read);
         return;
     }
 
     char *prefix = read_inside_quotes();
     int key = convertePrefixo(prefix);
+    free(prefix);
     
+    // printf("%d\n", key);
     long long int offset = search_key(tree, key);
     if (offset == -1) {
         printf("Registro inexistente.\n");
+        free(index_filename);
+        free(field_to_read);
+        destroy_btree(tree);
         return;
     }
 
@@ -787,7 +796,6 @@ void search_vehicle(FILE *bin_fp){
     free_dynamic_fields(&valid_register);
     free(index_filename);
     free(field_to_read);
-    free(prefix);
     destroy_btree(tree);
 }
 
@@ -802,6 +810,7 @@ void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted
     // Checando a consistência do arquivo
     if (header.status == '0'){
         printf("Falha no processamento do arquivo.\n");
+        destroy_btree(tree);
         *inserted = FALSE;
         return;
     } else {
@@ -814,7 +823,7 @@ void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted
     int num_registers = -1;
     scanf("%d", &num_registers);
     char cur_char = getc(stdin);
-    while (cur_char != '\n' && cur_char != ' ')
+    while (cur_char != '\n' && cur_char != ' ' && cur_char != EOF)
         cur_char = getc(stdin);
 
     // Inicia as inserções
@@ -837,6 +846,7 @@ void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted
         VEHICLE new_vehicle;
         fill_register(&new_vehicle, values, &header);
         write_data(bin_fp, &new_vehicle, &header);
+        header.next_reg = ftell(bin_fp);
         
         free_word_list(entries);
     }

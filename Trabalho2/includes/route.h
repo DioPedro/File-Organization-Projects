@@ -21,7 +21,7 @@ void create_route_binary(FILE *csv_fp, FILE *bin_fp);
 void read_route_bin(FILE *bin_fp);
 void search_route_by_field(FILE *bin_fp, char *field, char *value);
 void insert_new_route(FILE *bin_fp, bool *inserted);
-void create_route_index_file(FILE *bin_fp, char *index_filename);
+bool create_route_index_file(FILE *bin_fp, char *index_filename);
 void search_route(FILE *bin_fp);
 void insert_route_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted);
 
