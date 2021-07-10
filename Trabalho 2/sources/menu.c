@@ -201,11 +201,25 @@ void search_in_index_file(CASE which_case){
         return;
     }
 
-    if (which_case == Vehicle)
-        search_vehicle(bin_fp);
-    else 
-        search_route(bin_fp);
+    char *index_filename = read_word(stdin);
+    char *field_to_read = read_word(stdin);
     
+    // Checando a existência e consistência da árvore B
+    btree *tree = load_btree(index_filename);
+    if  (tree == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        free(index_filename);
+        free(field_to_read);
+        return;
+    }
+
+    if (which_case == Vehicle)
+        search_vehicle(bin_fp, tree);
+    else 
+        search_route(bin_fp, tree);
+    
+    free(index_filename);
+    free(field_to_read);
     free(bin_filename);
     fclose(bin_fp);
 }

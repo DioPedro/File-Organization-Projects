@@ -22,7 +22,7 @@ void read_vehicle_bin(FILE *bin_fp);
 void search_vehicle_by_field(FILE *bin_fp, char *field, char *value);
 void insert_new_vehicle(FILE *bin_fp, bool *inserted);
 bool create_vehicle_index_file(FILE *bin_fp, char *index_filename);
-void search_vehicle(FILE *bin_fp);
+void search_vehicle(FILE *bin_fp, btree *tree);
 void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted);
 
 #endif

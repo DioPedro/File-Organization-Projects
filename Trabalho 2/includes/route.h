@@ -22,7 +22,7 @@ void read_route_bin(FILE *bin_fp);
 void search_route_by_field(FILE *bin_fp, char *field, char *value);
 void insert_new_route(FILE *bin_fp, bool *inserted);
 bool create_route_index_file(FILE *bin_fp, char *index_filename);
-void search_route(FILE *bin_fp);
+void search_route(FILE *bin_fp, btree *tree);
 void insert_route_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted);
 
 #endif

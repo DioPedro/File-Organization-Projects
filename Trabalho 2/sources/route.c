@@ -609,7 +609,7 @@ static void read_and_insert(FILE *bin_fp, btree *tree, long long int offset){
     fread(&new_key, sizeof(int), 1, bin_fp);
     insert_in_btree(tree, new_key, offset);
 
-    // Indo para o fim do registro
+    // Indo para o fim do registro (pula os campos de tamanho variavel no for)
     fseek(bin_fp, 1, SEEK_CUR);
     for (int i = 0; i < 2; i++) {
         int size;
@@ -675,24 +675,12 @@ bool create_route_index_file(FILE *bin_fp, char *index_filename){
 }
 
 // Função que procura um registro do tipo linha usando a árvore B
-void search_route(FILE *bin_fp){
+void search_route(FILE *bin_fp, btree *tree){
     // Verifica a consistência do arquivo
     char status;
     fread(&status, sizeof(char), 1, bin_fp);
     if (status == '0'){
         printf("Falha no processamento do arquivo.\n");
-        return;
-    }
-    
-    char *index_filename = read_word(stdin);
-    char *field_to_read = read_word(stdin);
-    
-    // Checando a existência e consistência da árvore B
-    btree *tree = load_btree(index_filename);
-    if  (tree == NULL) {
-        printf("Falha no processamento do arquivo.\n");
-        free(index_filename);
-        free(field_to_read);
         return;
     }
 
@@ -703,8 +691,6 @@ void search_route(FILE *bin_fp){
     long long int offset = search_key(tree, key);
     if (offset == -1) {
         printf("Registro inexistente.\n");
-        free(index_filename);
-        free(field_to_read);
         destroy_btree(tree);
         return;
     }
@@ -717,8 +703,6 @@ void search_route(FILE *bin_fp){
 
     // Liberando a memória utilizada
     free_dynamic_fields(&valid_register);
-    free(index_filename);
-    free(field_to_read);
     destroy_btree(tree);
 }
 
