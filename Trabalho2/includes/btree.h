@@ -12,5 +12,6 @@ long long int search_key(btree *tree, int to_search);
 void insert_in_btree(btree *tree, int key, long long int offset);
 void destroy_btree(btree *tree);
 void update_tree_header(btree *tree);
+void set_tree_in_use(btree *tree);
 
 #endif

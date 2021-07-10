@@ -684,6 +684,7 @@ void insert_new_vehicle(FILE *bin_fp, bool *inserted){
     *inserted = TRUE;
 }
 
+// Função que cria uma chave a partir de um prefixo e insere no arquivo de índices
 static void read_and_insert(FILE *bin_fp, btree *tree, long long int offset){
     char prefix[6];
     fread(prefix, sizeof(char), 5, bin_fp);
@@ -701,6 +702,7 @@ static void read_and_insert(FILE *bin_fp, btree *tree, long long int offset){
     }
 }
 
+// Função que cria um arquivo de índice para o veículo
 bool create_vehicle_index_file(FILE *bin_fp, char *index_filename){
     btree *new_tree = init_tree(index_filename);
     if (new_tree == NULL) {
@@ -749,11 +751,13 @@ bool create_vehicle_index_file(FILE *bin_fp, char *index_filename){
         }
     }  
 
+    // Atualizando o cabeçalho do arquivo de índices
     update_tree_header(new_tree);
     destroy_btree(new_tree);
     return TRUE;
 }
 
+// Função que procura um registro do tipo veículo usando a árvore B
 void search_vehicle(FILE *bin_fp){
     // Verifica a consistência do arquivo
     char status;
@@ -766,6 +770,7 @@ void search_vehicle(FILE *bin_fp){
     char *index_filename = read_word(stdin);
     char *field_to_read = read_word(stdin);
     
+    // Checando a existência e consistência da árvore B
     btree *tree = load_btree(index_filename);
     if  (tree == NULL) {
         printf("Falha no processamento do arquivo.\n");
@@ -774,11 +779,12 @@ void search_vehicle(FILE *bin_fp){
         return;
     }
 
+    // Lendo e convertendo o prefixo
     char *prefix = read_inside_quotes();
     int key = convertePrefixo(prefix);
     free(prefix);
     
-    // printf("%d\n", key);
+    // Achando o byte offset do registro
     long long int offset = search_key(tree, key);
     if (offset == -1) {
         printf("Registro inexistente.\n");
@@ -788,17 +794,20 @@ void search_vehicle(FILE *bin_fp){
         return;
     }
 
+    // Indo até o registro, logo após o registro é lido e printado
     fseek(bin_fp, offset, SEEK_SET);
     VEHICLE valid_register;
     read_vehicle_register(bin_fp, &valid_register, TRUE);
     print_vehicle_register(&valid_register);
 
+    // Liberando a memória utilizada
     free_dynamic_fields(&valid_register);
     free(index_filename);
     free(field_to_read);
     destroy_btree(tree);
 }
 
+// Função que insere um veículo nos arquivos binário e de índice
 void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted){
     // Vai para o início do arquivo binário para verificar se está consistente
     // e, caso esteja, muda para inconsistente para iniciarmos as inserções
@@ -815,11 +824,13 @@ void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted
         return;
     } else {
         set_file_in_use(bin_fp);
+        set_tree_in_use(tree);
     }
 
     // Vai para o byte Offset do próximo registro a ser inserido 
     fseek(bin_fp, header.next_reg, SEEK_SET);
 
+    // Descobrindo quantos registros serão inseridos
     int num_registers = -1;
     scanf("%d", &num_registers);
     char cur_char = getc(stdin);
@@ -837,7 +848,7 @@ void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted
             return;
         }
         
-        // Inserindo no arquivo de indices
+        // Inserindo no arquivo de índices
         char **values = get_word_list(entries);
         int new_key = convertePrefixo(values[0]);
         insert_in_btree(tree, new_key, header.next_reg);

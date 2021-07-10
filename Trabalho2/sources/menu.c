@@ -161,6 +161,7 @@ void insert(CASE which_case){
     free(bin_filename);
 }
 
+// Função que cria o arquivo de índices
 void create_index(CASE which_case){
     char *bin_filename = read_word(stdin);
     char *index_filename = read_word(stdin);
@@ -179,7 +180,7 @@ void create_index(CASE which_case){
         was_created = create_vehicle_index_file(bin_fp, index_filename);
     else 
         was_created = create_route_index_file(bin_fp, index_filename);
-    
+        
     if (was_created)
         binarioNaTela(index_filename);
 
@@ -188,6 +189,7 @@ void create_index(CASE which_case){
     fclose(bin_fp);
 }
 
+// Função que busca um registro usando a árvore B
 void search_in_index_file(CASE which_case){
     char *bin_filename = read_word(stdin);
     
@@ -208,7 +210,7 @@ void search_in_index_file(CASE which_case){
     fclose(bin_fp);
 }
 
-// Função que insere registros no arquivo binário
+// Função que insere registros no arquivo binário e no arquivo de índices
 void extended_insert(CASE which_case){
     char *bin_filename = read_word(stdin);
 
@@ -220,9 +222,10 @@ void extended_insert(CASE which_case){
         return;
     }
 
+    // Checa a existência e consistência da árvore B
     char *index_filename = read_word(stdin);
     btree *tree = load_btree(index_filename);
-    if  (tree == NULL) {
+    if (tree == NULL) {
         printf("Falha no processamento do arquivo.\n");
         free(bin_filename);
         free(index_filename);

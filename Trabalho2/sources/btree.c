@@ -45,6 +45,7 @@ struct _PAGE {
     long long int pr[4];
 };
 
+// Função que faz uma busca binária
 int bin_search(int keys[], int min, int max, int searched) {
     int mid = (min + max) / 2;
     while (min < max) {
@@ -63,17 +64,21 @@ int bin_search(int keys[], int min, int max, int searched) {
     return mid;
 }
 
+// Função que carrega uma árvore B
 btree *load_btree(char *filename) {
+    // Tentando alocar espaço na memória para a árvore
     btree *new_tree = malloc(sizeof(btree));
     if (new_tree == NULL)
         return NULL;
     
+    // Salvando o ponteiro do arquivo binário
     new_tree->btree = fopen(filename, "r+b");
     if (new_tree->btree == NULL) {
         free(new_tree);
         return NULL;
     }
     
+    // Tentando alocar espaço na memória para o cabeçalho da árvore B
     new_tree->btree_header = malloc(sizeof(header));
     if (new_tree->btree_header == NULL) {
         fclose(new_tree->btree);
@@ -81,12 +86,14 @@ btree *load_btree(char *filename) {
         return NULL;
     }
 
+    // Caso tenhamos conseguido alocar o espaço checamos a consistência do arquivo
     fread(&new_tree->btree_header->status, sizeof(char), 1, new_tree->btree);
     if (new_tree->btree_header->status == '0') {
         destroy_btree(new_tree);
         return NULL;
     }
 
+    // O arquivo estando consistente, lemos as informações do cabeçalho
     fread(&new_tree->btree_header->root, sizeof(int), 1, new_tree->btree);
     fread(&new_tree->btree_header->next_RRN, sizeof(int), 1, new_tree->btree);
     fseek(new_tree->btree, 68, SEEK_CUR);
@@ -94,6 +101,7 @@ btree *load_btree(char *filename) {
     return new_tree;
 }
 
+// Função que atualiza o cabeçalho do arquivo após uso
 void update_tree_header(btree *tree){
     fseek(tree->btree, 1, SEEK_SET);
     fwrite(&tree->btree_header->root, sizeof(int), 1, tree->btree);
@@ -104,6 +112,14 @@ void update_tree_header(btree *tree){
     fwrite(&tree->btree_header->status, sizeof(char), 1, tree->btree);
 }
 
+// Função que atualiza o status do arquivo para o uso
+void set_tree_in_use(btree *tree){
+    fseek(tree->btree, 0, SEEK_SET);
+    tree->btree_header->status = '0';
+    fwrite(&tree->btree_header->status, sizeof(char), 1, tree->btree);
+}
+
+// Função que gera uma linha com lixo usando o tamanho passado por parâmetro
 char *generate_thrash(int len) {
     char *thrash = malloc(len * sizeof(char));
     for (int i = 0; i < len; i++)
@@ -112,12 +128,15 @@ char *generate_thrash(int len) {
     return thrash;
 }
 
+// Função que escreve uma página de disco no arquivo de índices
 void write_page(FILE *index_fp, page to_insert) {
+    // Indo para o lugar certo do arquivo e escrevendo as informações da página
     fseek(index_fp, (to_insert.RRN + 1)  * PAGE_SIZE, SEEK_SET);
     fwrite(&to_insert.is_leaf, sizeof(char), 1, index_fp);
     fwrite(&to_insert.num_of_keys, sizeof(int), 1, index_fp);
     fwrite(&to_insert.RRN, sizeof(int), 1, index_fp);
     
+    // Escrevendo os índices
     for (int i = 0; i < to_insert.num_of_keys; i++) {
         fwrite(&to_insert.p[i], sizeof(int), 1, index_fp);
         fwrite(&to_insert.c[i], sizeof(int), 1, index_fp);
@@ -136,6 +155,7 @@ void write_page(FILE *index_fp, page to_insert) {
     }
 }
 
+// Função que cria uma página raiz
 void create_root(FILE *index_fp, header *index_header, int right_child, promo_page page_data, int is_leaf) {  
     page root_data;
     root_data.is_leaf = is_leaf == 1 ? '1': '0';
@@ -150,6 +170,7 @@ void create_root(FILE *index_fp, header *index_header, int right_child, promo_pa
     index_header->root = root_data.RRN;
 }
 
+// Função que escreve o cabeçalho no arquivo de índices
 void write_header(FILE *index_fp, int root_rrn, char status, int to_insert_rrn) {
     fwrite(&status, sizeof(char), 1, index_fp);
     fwrite(&root_rrn, sizeof(int), 1, index_fp);
@@ -160,17 +181,20 @@ void write_header(FILE *index_fp, int root_rrn, char status, int to_insert_rrn) 
     free(thrash);
 }
 
+// Função que inicia uma árvore B
 btree *init_tree(char *filename) {
     btree *new_btree = malloc(sizeof(btree));
     if (new_btree == NULL) 
         return NULL;
 
+    // Tentando abrir o arquivo no modo de escrita
     new_btree->btree = fopen(filename, "wb+");
     if (new_btree->btree == NULL) {
         free(new_btree);
         return NULL;
     }
     
+    // Iniciando o cabeçalho e escrevendo no arquivo
     new_btree->btree_header = malloc(sizeof(header));
     new_btree->btree_header->root = -1;
     new_btree->btree_header->next_RRN = 0;
@@ -180,6 +204,7 @@ btree *init_tree(char *filename) {
     return new_btree;
 }
 
+// Função que lê uma página de registro
 void read_page(FILE *index_fp, page *data_reg) { 
     fread(&(data_reg->is_leaf), sizeof(char), 1, index_fp);
     fread(&(data_reg->num_of_keys), sizeof(int), 1, index_fp);
@@ -195,6 +220,7 @@ void read_page(FILE *index_fp, page *data_reg) {
         fread(&(data_reg->p[TREE_ORDER - 1]), sizeof(int), 1, index_fp);
 }
 
+// Função auxiliar de busca
 long long int recursive_search(FILE *index_fp, int rrn, int to_search) {
     page content;
     fseek(index_fp, PAGE_SIZE * (rrn + 1), SEEK_SET);
@@ -211,20 +237,22 @@ long long int recursive_search(FILE *index_fp, int rrn, int to_search) {
         return recursive_search(index_fp, content.p[pos], to_search);
 }
 
+// Função que procura por uma chave no arquivo de índices
 long long int search_key(btree *tree, int to_search) {
     if (tree->btree_header->root ==  -1) {
         // Nao tem nenhum nó ainda
         destroy_btree(tree);
         return -1;
-    }          
+    }
     
     return recursive_search(tree->btree, tree->btree_header->root, to_search);
 }
 
+// Função que insere ordenadamente
 void ordered_insertion(FILE *index_fp, page *curr_page, promo_page *promoted_page, int *c, int *p, long long int *pr, int num_of_elements) {
     fseek(index_fp, 1, SEEK_CUR); // Pula is_leaf
 
-    // insere num vetor auxiliar os elementos ordenados
+    // Insere num vetor auxiliar os elementos ordenados
     bool was_added = FALSE;
     for (int i = 0; i <= num_of_elements; i++) {
         if (i == num_of_elements && !was_added) {
@@ -232,7 +260,7 @@ void ordered_insertion(FILE *index_fp, page *curr_page, promo_page *promoted_pag
             p[i] = promoted_page->left_rrn;
             p[i + 1] = curr_page->p[i];
             pr[i] = promoted_page->offset;
-            break;   
+            break;
         }
 
         if (was_added) {
@@ -255,16 +283,18 @@ void ordered_insertion(FILE *index_fp, page *curr_page, promo_page *promoted_pag
     }
 }
 
+// Função que faz o split
 void split(FILE *index_fp, header *btree_header, page *to_split, promo_page *promoted) {
     page new_page;
-    new_page.RRN = btree_header->next_RRN; // novo nó
+    new_page.RRN = btree_header->next_RRN; // Novo nó
     new_page.is_leaf = to_split->is_leaf;
 
+    // Criando vetores auxiliares para ajudar no split
     int c[5], p[6];
     long long int pr[5];
     ordered_insertion(index_fp, to_split, promoted, c, p, pr, TREE_ORDER - 1);
 
-    // split
+    // Splitando
     to_split->num_of_keys = TREE_ORDER/2;
     for (int i = 0; i < TREE_ORDER/2; i++) {
         to_split->p[i] = p[i];
@@ -281,7 +311,7 @@ void split(FILE *index_fp, header *btree_header, page *to_split, promo_page *pro
     }
     new_page.p[TREE_ORDER/2] = p[TREE_ORDER];
 
-    // Escreve nova pagina
+    // Escrevendo a nova pagina
     write_page(index_fp, new_page);
     
 
@@ -291,6 +321,7 @@ void split(FILE *index_fp, header *btree_header, page *to_split, promo_page *pro
     promoted->left_rrn = to_split->RRN;
 }
 
+// Inserindo um índice dentro de uma página já existente
 void insert_inner(FILE *index_fp, page *curr_page, promo_page *promoted_page) {   
     int c[5], p[6];
     long long int pr[5];
@@ -306,7 +337,7 @@ void insert_inner(FILE *index_fp, page *curr_page, promo_page *promoted_page) {
     curr_page->num_of_keys++;
 }
 
-// Td indica que esta certo
+// Função auxiliar de inserção
 promo_page recursive_insert(FILE *index_fp, header *index_header, int curr_rrn, int key, long long int offset) {
     page content;
     fseek(index_fp, PAGE_SIZE * (curr_rrn  + 1), SEEK_SET);
@@ -315,6 +346,7 @@ promo_page recursive_insert(FILE *index_fp, header *index_header, int curr_rrn, 
     promo_page promoted_page;
     promoted_page.value = key;
     
+    // Se a página for uma folha
     if (content.is_leaf == '1') {
         promoted_page.offset = offset;
         promoted_page.left_rrn = -1;
@@ -335,6 +367,7 @@ promo_page recursive_insert(FILE *index_fp, header *index_header, int curr_rrn, 
         return promoted_page;
     }
 
+    // Fazendo a busca para achar o local certo da inserção
     int pos = bin_search(content.c, 0, content.num_of_keys - 1, key);
     if (content.c[pos] > key) 
         promoted_page = recursive_insert(index_fp, index_header, content.p[pos], key, offset);
@@ -348,7 +381,8 @@ promo_page recursive_insert(FILE *index_fp, header *index_header, int curr_rrn, 
         else if (content.c[pos] < key) 
             content.p[pos + 1] = index_header->next_RRN - 1;
         
-        if (content.num_of_keys < TREE_ORDER - 1) { // Tem espaço, só inserir no meio
+        // Tem espaço, só inserir no meio
+        if (content.num_of_keys < TREE_ORDER - 1) { 
             insert_inner(index_fp, &content, &promoted_page);
             
             // Como inseriu no meio, ao voltar para o nó anterior, n tem mais nada para inserir
@@ -365,6 +399,7 @@ promo_page recursive_insert(FILE *index_fp, header *index_header, int curr_rrn, 
     return promoted_page;
 }
 
+// Função que faz a inserção no arquivo de índices
 void insert_in_btree(btree *tree, int key, long long int offset) {
     promo_page new_root;
     if (tree->btree_header->root == -1) {
@@ -384,6 +419,7 @@ void insert_in_btree(btree *tree, int key, long long int offset) {
     }
 }
 
+// Função que fecha e libera a memória de uma árvore B
 void destroy_btree(btree *tree) {
     fclose(tree->btree);
     free(tree->btree_header);
