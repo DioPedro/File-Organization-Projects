@@ -48,5 +48,6 @@ void search_route(FILE *bin_fp, btree *tree);
 void insert_route_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted);
 int get_num_of_routes(FILE *bin_fp);
 void free_route_strings(ROUTE *data);
+ROUTE_HEADER get_route_header(FILE *bin_fp);
 
 #endif

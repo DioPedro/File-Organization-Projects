@@ -829,10 +829,27 @@ void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted
 
 int get_num_of_vehicles(FILE *bin_fp){
     // Retorna o número de registros no binario e pula para o fim do cabeçalho
-    fseek(bin_fp, 8, SEEK_CUR);
+    fseek(bin_fp, 9, SEEK_SET);
     int num_of_regs = -1;
     fread(&num_of_regs, sizeof(int), 1, bin_fp);
     fseek(bin_fp, 162, SEEK_CUR);
     
     return num_of_regs;
+}
+
+VEHICLE_HEADER get_vehicle_header(FILE *bin_fp){
+    VEHICLE_HEADER header;
+    fseek(bin_fp, 0, SEEK_SET);
+    fread(&header.status, sizeof(char), 1, bin_fp);
+    fread(&header.next_reg, sizeof(long long int), 1, bin_fp);
+    fread(&header.num_of_regs, sizeof(int), 1, bin_fp);
+    fread(&header.num_of_removeds, sizeof(int), 1, bin_fp);
+    fread(&header.prefix_description, sizeof(char), 18, bin_fp);
+    fread(&header.date_description, sizeof(char), 35, bin_fp);
+    fread(&header.seats_description, sizeof(char), 42, bin_fp);
+    fread(&header.route_description, sizeof(char), 26, bin_fp);
+    fread(&header.model_description, sizeof(char), 17, bin_fp);
+    fread(&header.category_description, sizeof(char), 20, bin_fp);
+
+    return header;
 }

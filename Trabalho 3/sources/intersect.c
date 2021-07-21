@@ -106,18 +106,279 @@ int optimized_intersection(FILE *vehicle_bin, FILE *route_bin, btree *index_file
     return SUCCESS;
 }
 
-// int main() {
-//     FILE *vehicle = fopen("veiculo1.bin", "rb");
-//     FILE *route = fopen("linha1.bin", "rb");
+void update_header(FILE *bin_fp, char status, long long int next_reg){
+    fseek(bin_fp, 1, SEEK_SET);
+    fwrite(&next_reg, sizeof(long long int), 1, bin_fp);
+    fseek(bin_fp, 0, SEEK_SET);
+    fwrite(&status, sizeof(char), 1, bin_fp);
+}
 
-//     char fn[50] = "indiceLinha1.bin";
-//     btree *new_tree = load_btree(fn);
-//     optimized_intersection(vehicle, route, new_tree);
-//     // brute_intersection(vehicle, route);
+bool route_compare(const void *v1, const void *v2){
+    ROUTE *a = *(ROUTE **)v1;
+    ROUTE *b = *(ROUTE **)v2;
 
-//     destroy_btree(new_tree);
-//     fclose(vehicle);
-//     fclose(route);
+    return (a->route_code > b->route_code);
+}
 
-//     return 0;
-// }
+ROUTE **get_route_registers(FILE *bin_fp, int num_of_routes){
+    ROUTE **routes = malloc(num_of_routes * sizeof(ROUTE*));
+    for (int i = 0; i < num_of_routes; i++) {
+        routes[i] = malloc(sizeof(ROUTE));
+    }
+
+    for (int i = 0; i < num_of_routes; i++) {
+        read_route_register(bin_fp, routes[i], TRUE);
+
+        if (routes[i]->is_removed == '0') {
+            free_route_strings(routes[i]);
+            i--;
+        }
+    }
+
+    return routes;
+}
+
+void write_route_header(FILE *bin_fp, ROUTE_HEADER *header){
+    fseek(bin_fp, 0, SEEK_SET);
+    header->status = '0'; // Set inconsistency
+    header->next_reg = 0; // We're gonna update after writing all the vehicles
+    header->num_of_removeds = 0; // Since we are'nt adding removed register to the new file we hard code it
+    fwrite(&header->status, sizeof(char), 1, bin_fp);
+    fwrite(&header->next_reg, sizeof(long long int), 1, bin_fp);
+    fwrite(&header->num_of_regs, sizeof(int), 1, bin_fp);
+    fwrite(&header->num_of_removeds, sizeof(int), 1, bin_fp);
+    fwrite(&header->code_description, sizeof(char), 15, bin_fp);
+    fwrite(&header->card_description, sizeof(char), 13, bin_fp);
+    fwrite(&header->name_description, sizeof(char), 13, bin_fp);
+    fwrite(&header->color_description, sizeof(char), 24, bin_fp);
+}
+
+void write_route(FILE *bin_fp, ROUTE *route){
+    // Escrita dos campos de tamanho fixo:
+    // removido, tamanhoRegistro, codLinha, aceitaCartao, respectivamente
+    fwrite(&(route->is_removed), sizeof(char), 1, bin_fp);
+    fwrite(&(route->register_length), sizeof(int), 1, bin_fp);
+    fwrite(&(route->route_code), sizeof(int), 1, bin_fp);
+    fwrite(&(route->accepts_card), sizeof(char), 1, bin_fp);
+
+    // Escrita do tamanho do nomeLinha: se for 0, nomeLinha não deve ser escrito 
+    fwrite(&(route->name_length), sizeof(int), 1, bin_fp);
+    if (route->name_length != 0)
+        write_data_strings(bin_fp, route->route_name, route->name_length);
+
+    // Escrita do tamanho do corLinha: se for 0, corLinha não deve ser escrito 
+    fwrite(&(route->color_length), sizeof(int), 1, bin_fp);
+    if (route->color_length != 0)
+        write_data_strings(bin_fp, route->color, route->color_length);
+}
+
+ROUTE **sort_route_file(FILE *bin_fp){
+    bool vehicle_is_ok = check_bin_integrity(bin_fp);
+    if (!vehicle_is_ok) {
+        printf("Falha no carregamento do arquivo.\n");
+        return NULL;   
+    }
+
+    ROUTE_HEADER header = get_route_header(bin_fp);
+
+    ROUTE **routes = get_route_registers(bin_fp, header.num_of_regs);
+
+    qsort(routes, header.num_of_regs, sizeof(ROUTE*), route_compare);
+
+    return routes;
+}
+
+void free_route_registers(ROUTE **routes, int num_of_regs){
+    for (int i = 0; i < num_of_regs; i++) {
+        free_route_strings(routes[i]);
+        free(routes[i]);
+    }
+    free(routes);
+}
+
+void write_sorted_route_file(FILE *bin_fp, char *new_file_name){
+    ROUTE_HEADER header = get_route_header(bin_fp);
+    
+    ROUTE **routes = sort_route_file(bin_fp);
+
+    FILE *new_fp = fopen(new_file_name, "wb");
+    write_route_header(new_fp, &header);
+
+    for (int i = 0; i < header.num_of_regs; i++) {
+        write_route(new_fp, routes[i]);
+    }
+
+    free_route_registers(routes, header.num_of_regs);
+
+    header.next_reg = ftell(new_fp);
+    header.status = '1'; //Set consistency
+    
+    update_header(new_fp, header.status, header.next_reg);
+
+    fclose(new_fp);
+}
+
+bool vehicle_compare(const void *v1, const void *v2){
+    VEHICLE *a = *(VEHICLE **)v1;
+    VEHICLE *b = *(VEHICLE **)v2;
+
+    return (a->route_code > b->route_code);
+}
+
+VEHICLE **get_vehicle_registers(FILE *bin_fp, int num_of_vehicles){
+    VEHICLE **vehicles = malloc(num_of_vehicles * sizeof(VEHICLE*));
+    for (int i = 0; i < num_of_vehicles; i++) {
+        vehicles[i] = malloc(sizeof(VEHICLE));
+    }
+
+    for (int i = 0; i < num_of_vehicles; i++) {
+        read_vehicle_register(bin_fp, vehicles[i], TRUE);
+
+        if (vehicles[i]->is_removed == '0') {
+            free_vehicle_strings(vehicles[i]);
+            i--;
+        }
+    }
+
+    return vehicles;
+}
+
+void write_vehicle_header(FILE *bin_fp, VEHICLE_HEADER *header){
+    fseek(bin_fp, 0, SEEK_SET);
+    header->status = '0'; // Set inconsistency
+    header->next_reg = 0; // We're gonna update after writing all the vehicles
+    header->num_of_removeds = 0; // Since we are'nt adding removed register to the new file we hard code it
+    fwrite(&header->status, sizeof(char), 1, bin_fp);
+    fwrite(&header->next_reg, sizeof(long long int), 1, bin_fp);
+    fwrite(&header->num_of_regs, sizeof(int), 1, bin_fp);
+    fwrite(&header->num_of_removeds, sizeof(int), 1, bin_fp);
+    fwrite(&header->prefix_description, sizeof(char), 18, bin_fp);
+    fwrite(&header->date_description, sizeof(char), 35, bin_fp);
+    fwrite(&header->seats_description, sizeof(char), 42, bin_fp);
+    fwrite(&header->route_description, sizeof(char), 26, bin_fp);
+    fwrite(&header->model_description, sizeof(char), 17, bin_fp);
+    fwrite(&header->category_description, sizeof(char), 20, bin_fp);
+}
+
+void write_vehicle(FILE *bin_fp, VEHICLE *vehicle){
+    // Escrita dos campos de tamanho fixo:
+    // removido, tamanhoRegistro, prefixo, data, quantidadeLugares, codigoLinha
+    fwrite(&(vehicle->is_removed), sizeof(char), 1, bin_fp);
+    fwrite(&(vehicle->register_length), sizeof(int), 1, bin_fp);
+    fwrite(&(vehicle->prefix), sizeof(char), 5, bin_fp);
+    fwrite(&(vehicle->date), sizeof(char), 10, bin_fp);
+    fwrite(&(vehicle->num_of_seats), sizeof(int), 1, bin_fp);
+    fwrite(&(vehicle->route_code), sizeof(int), 1, bin_fp);
+
+    // Escrita do tamanho do modelo: se for 0, modelo não deve ser escrito 
+    fwrite(&(vehicle->model_length), sizeof(int), 1, bin_fp);
+    if (vehicle->model_length != 0)
+        write_data_strings(bin_fp, vehicle->model, vehicle->model_length);
+
+    // Escrita do tamanho da categoria: se for 0, categoria não deve ser escrito
+    fwrite(&(vehicle->category_length), sizeof(int), 1, bin_fp);
+    if (vehicle->category_length != 0)
+        write_data_strings(bin_fp, vehicle->category, vehicle->category_length);
+}
+
+VEHICLE **sort_vehicle_file(FILE *bin_fp){
+    bool vehicle_is_ok = check_bin_integrity(bin_fp);
+    if (!vehicle_is_ok) {
+        printf("Falha no carregamento do arquivo.\n");
+        return NULL;
+    }
+
+    VEHICLE_HEADER header = get_vehicle_header(bin_fp);
+
+    VEHICLE **vehicles = get_vehicle_registers(bin_fp, header.num_of_regs);
+
+    qsort(vehicles, header.num_of_regs, sizeof(VEHICLE*), vehicle_compare);
+
+    return vehicles;
+}
+
+void free_vehicle_registers(VEHICLE **vehicles, int num_of_regs){
+    for (int i = 0; i < num_of_regs; i++) {
+        free_vehicle_strings(vehicles[i]);
+        free(vehicles[i]);
+    }
+    free(vehicles);
+}
+
+void write_sorted_vehicle_file(FILE *bin_fp, char *new_file_name){
+    VEHICLE_HEADER header = get_vehicle_header(bin_fp);
+    
+    VEHICLE **vehicles = sort_vehicle_file(bin_fp);
+
+    FILE *new_fp = fopen(new_file_name, "wb");
+    write_vehicle_header(new_fp, &header);
+
+    for (int i = 0; i < header.num_of_regs; i++) {
+        write_vehicle(new_fp, vehicles[i]);
+    }
+
+    free_vehicle_registers(vehicles, header.num_of_regs);
+
+    header.next_reg = ftell(new_fp);
+    header.status = '1'; //Set consistency
+    
+    update_header(new_fp, header.status, header.next_reg);
+
+    fclose(new_fp);
+}
+
+void merge_files(FILE *vehicle_fp, FILE *route_fp){
+    VEHICLE **vehicles = sort_vehicle_file(vehicle_fp);
+    ROUTE **routes = sort_route_file(route_fp);
+
+    if (vehicles == NULL || routes == NULL)
+        printf("Falha no processamento do arquivo.\n");
+
+    int num_of_vehicles = get_num_of_vehicles(vehicle_fp);
+    int num_of_routes = get_num_of_routes(route_fp);
+
+    int i = 0, j = 0;
+
+    bool has_matches = FALSE;
+    while (i < num_of_vehicles && j < num_of_routes) {
+        if (vehicles[i]->route_code == routes[j]->route_code) {
+            has_matches = TRUE;
+            print_vehicle_register(vehicles[i], FALSE);
+            print_route_register(routes[j]);
+        }
+
+        if (vehicles[i]->route_code <= routes[j]->route_code)
+            i++;
+        else
+            j++;
+    }
+
+    free_route_registers(routes, num_of_routes);
+    free_vehicle_registers(vehicles, num_of_vehicles);
+
+    if (!has_matches)
+        printf("Registro inexistente.\n");
+}
+
+int main() {
+    FILE *vehicle_fp = fopen("veiculo1.bin", "rb");
+    FILE *route_fp = fopen("linha1.bin", "rb");
+    char nfn[50] = "veiculoOrdenado.bin";
+    char nfn2[50] = "rotaOrdenado.bin";
+    // char sf[50] = "CodLinha";
+
+    // char fn[50] = "indiceLinha1.bin";
+    // btree *new_tree = load_btree(fn);
+    // optimized_intersection(vehicle_fp, route, new_tree);
+    // brute_intersection(vehicle_fp, route);
+    write_sorted_vehicle_file(vehicle_fp, nfn);
+    write_sorted_route_file(route_fp, nfn2);
+
+    merge_files(vehicle_fp, route_fp);
+
+    // destroy_btree(new_tree);
+    fclose(vehicle_fp);
+    fclose(route_fp);
+
+    return 0;
+}

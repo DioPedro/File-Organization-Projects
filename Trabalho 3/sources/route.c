@@ -130,7 +130,7 @@ static void create_header(FILE *bin_fp, ROUTE_HEADER *header, WORDS *header_list
 }
 
 // Escrita dos dados do registro de dados
-static void write_data(FILE *bin_fp, ROUTE *data, ROUTE_HEADER *header){
+void write_data(FILE *bin_fp, ROUTE *data, ROUTE_HEADER *header){
     // Tamanho do registro =  
     // 4 bytes(codlinha)    + 1 byte(aceitaCartao) 
     // 4 bytes(tamanhoCor)  + 4 bytes(tamanhoLinha)
@@ -747,11 +747,26 @@ void insert_route_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted){
 
 int get_num_of_routes(FILE *bin_fp){
     // Retorna o numero de linhas e pula para o fim do cabeçalho
-    fseek(bin_fp, 8, SEEK_CUR);
+    fseek(bin_fp, 9, SEEK_SET);
 
     int num_of_regs = -1;
     fread(&num_of_regs, sizeof(int), 1, bin_fp);
     fseek(bin_fp, 69, SEEK_CUR);
 
     return num_of_regs;
+}
+
+ROUTE_HEADER get_route_header(FILE *bin_fp){
+    ROUTE_HEADER header;
+    fseek(bin_fp, 0, SEEK_SET);
+    fread(&header.status, sizeof(char), 1, bin_fp);
+    fread(&header.next_reg, sizeof(long long int), 1, bin_fp);
+    fread(&header.num_of_regs, sizeof(int), 1, bin_fp);
+    fread(&header.num_of_removeds, sizeof(int), 1, bin_fp);
+    fread(&header.code_description, sizeof(char), 15, bin_fp);
+    fread(&header.card_description, sizeof(char), 13, bin_fp);
+    fread(&header.name_description, sizeof(char), 13, bin_fp);
+    fread(&header.color_description, sizeof(char), 24, bin_fp);
+
+    return header;
 }

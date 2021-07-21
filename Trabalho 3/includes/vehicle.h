@@ -51,5 +51,6 @@ void search_vehicle(FILE *bin_fp, btree *tree);
 void insert_vehicle_into_index_and_bin(FILE *bin_fp, btree *tree, bool *inserted);
 int get_num_of_vehicles(FILE *bin_fp);
 void free_vehicle_strings(VEHICLE *data);
+VEHICLE_HEADER get_vehicle_header(FILE *bin_fp);
 
 #endif
