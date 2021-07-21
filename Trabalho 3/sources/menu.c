@@ -265,7 +265,7 @@ void extended_insert(CASE which_case){
 }
 
 void brute_matching(){
-    // Abre para leitura e atualização e verifica a existência do arquivo binário
+    // Abre para leitura verifica a existência do arquivo binário
     char *vehicle_filename = read_word(stdin);
     FILE *vehicle_fp = fopen(vehicle_filename, "rb");
     if (vehicle_fp == NULL){
@@ -274,6 +274,7 @@ void brute_matching(){
         return;
     }
 
+    // O mesmo para o arquivo de linha
     char *route_filename = read_word(stdin);
     FILE *route_fp = fopen(route_filename, "rb");
     if (route_fp == NULL){
@@ -284,12 +285,15 @@ void brute_matching(){
         return;
     }
 
+    // Leitura dos campos que serão comparados
+    // Nesse caso, iremos analisar apenas codLinha, logo não precisamos do parametro
     char *to_read = read_word(stdin);
     free(to_read);
 
     to_read = read_word(stdin);
     free(to_read);
     
+    // Realiza a junção de loop aninhado
     int return_code = brute_intersection(vehicle_fp, route_fp);
     if (return_code == FILE_FAILURE)
         printf("Falha no processamento do arquivo.\n");
@@ -303,7 +307,7 @@ void brute_matching(){
 }
 
 void optimized_matching(){
-    // Abre para leitura e atualização e verifica a existência do arquivo binário
+    // Abre para leitura e verifica a existência do arquivo binário
     char *vehicle_filename = read_word(stdin);
     FILE *vehicle_fp = fopen(vehicle_filename, "rb");
     if (vehicle_fp == NULL){
@@ -312,6 +316,7 @@ void optimized_matching(){
         return;
     }
 
+    // O mesmo para o arquivo de linha
     char *route_filename = read_word(stdin);
     FILE *route_fp = fopen(route_filename, "rb");
     if (route_fp == NULL){
@@ -322,15 +327,18 @@ void optimized_matching(){
         return;
     }
 
+    // Ignora a leitura dos campos a serem comparados
     char *to_read = read_word(stdin);
     free(to_read);
 
     to_read = read_word(stdin);
     free(to_read);
 
-    // Indice linha
+    // Leitura do parametro indiceLinha e carregamento do arquivo de indices
     to_read = read_word(stdin);
     btree *route_btree = load_btree(to_read);
+
+    // Verificando se a árvore B está correta
     if (route_btree == NULL) {
         printf("Falha no processamento do arquivo.\n");
         free(route_filename);
@@ -341,6 +349,7 @@ void optimized_matching(){
         return;
     }
     
+    // Realiza a busca otimizada 
     int return_code = optimized_intersection(vehicle_fp, route_fp, route_btree);
     if (return_code == FILE_FAILURE)
         printf("Falha no processamento do arquivo.\n");
@@ -357,7 +366,7 @@ void optimized_matching(){
 }
 
 void sort_file(CASE which_case){
-    // Abre para leitura e atualização e verifica a existência do arquivo binário
+    // Abre para leitura e verifica a existência do arquivo binário
     char *bin_filename = read_word(stdin);
     FILE *bin_fp = fopen(bin_filename, "rb");
     if (bin_fp == NULL){
@@ -366,16 +375,21 @@ void sort_file(CASE which_case){
         return;
     }
 
+    // Leitura do nome do novo arquivo 
     char *sorted_filename = read_word(stdin);
+    
+    // Ignorando o campo de ordenacao, analisaremos apenas o codLinha
     char *to_read = read_word(stdin);
     free(to_read);
 
+    // Realiza os sorts e escrita no novo arquivo
     int return_code;
     if (which_case == 1) 
         return_code = write_sorted_vehicle_file(bin_fp, sorted_filename);
     else 
         return_code = write_sorted_route_file(bin_fp, sorted_filename);
 
+    // Imprime os casos de erro, caso existam
     if (return_code == FILE_FAILURE)
         printf("Falha no processamento do arquivo.\n");
     else if (return_code == NOT_FOUND)
@@ -389,7 +403,7 @@ void sort_file(CASE which_case){
 }
 
 void merge_by_route_code() {
-    // Abre para leitura e atualização e verifica a existência do arquivo binário
+    // Abre para leitura e verifica a existência do arquivo de veiculos
     char *vehicle_filename = read_word(stdin);
     FILE *vehicle_fp = fopen(vehicle_filename, "rb");
     if (vehicle_fp == NULL){
@@ -398,22 +412,26 @@ void merge_by_route_code() {
         return;
     }
 
+    // Abre para leitura e verifica a existência do arquivo de linhas
     char *route_filename = read_word(stdin);
-    FILE *route_fp = fopen(vehicle_filename, "rb");
+    FILE *route_fp = fopen(route_filename, "rb");
     if (route_fp == NULL){
         printf("Falha no processamento do arquivo.\n");
         free(vehicle_filename);
         free(route_filename);
-        fclose(route_fp);
+        fclose(vehicle_fp);
         return;
     }
 
+    // Ignora os campos de ordenacao, veremos apenas codLinha
     char *to_read = read_word(stdin);
     free(to_read);
 
     to_read = read_word(stdin);
     free(to_read);
 
+
+    // Realiza o merge dos arquivos
     int return_code = merge_files(vehicle_fp, route_fp);
     if (return_code == FILE_FAILURE)
         printf("Falha no processamento do arquivo.\n");
@@ -456,4 +474,6 @@ void start_program(){
         merge_by_route_code();
     else
         printf("Comando inválido\n");
+
+    // Fim :)
 }
