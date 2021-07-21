@@ -380,6 +380,8 @@ void sort_file(CASE which_case){
         printf("Falha no processamento do arquivo.\n");
     else if (return_code == NOT_FOUND)
         printf("Registro inexistente.\n");
+    else 
+        binarioNaTela(sorted_filename);
 
     free(bin_filename);
     free(sorted_filename);
