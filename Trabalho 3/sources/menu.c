@@ -347,6 +347,8 @@ void optimized_matching(){
     else if (return_code == NOT_FOUND)
         printf("Registro inexistente.\n");
 
+
+    destroy_btree(route_btree);
     free(to_read);
     free(route_filename);
     free(vehicle_filename);

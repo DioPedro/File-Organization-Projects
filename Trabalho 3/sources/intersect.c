@@ -85,6 +85,7 @@ int optimized_intersection(FILE *vehicle_bin, FILE *route_bin, btree *index_file
             free_vehicle_strings(&current_vehicle);
             continue;   
         }
+        found_matches = TRUE;
         
         fseek(route_bin, offset, SEEK_SET);
         
