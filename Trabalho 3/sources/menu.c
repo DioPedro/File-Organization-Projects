@@ -264,6 +264,164 @@ void extended_insert(CASE which_case){
     free(bin_filename);
 }
 
+void brute_matching(){
+    // Abre para leitura e atualização e verifica a existência do arquivo binário
+    char *vehicle_filename = read_word(stdin);
+    FILE *vehicle_fp = fopen(vehicle_filename, "rb");
+    if (vehicle_fp == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        free(vehicle_filename);
+        return;
+    }
+
+    char *route_filename = read_word(stdin);
+    FILE *route_fp = fopen(route_filename, "rb");
+    if (route_fp == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        free(route_filename);
+        free(vehicle_filename);
+        fclose(vehicle_fp);
+        return;
+    }
+
+    char *to_read = read_word(stdin);
+    free(to_read);
+
+    to_read = read_word(stdin);
+    free(to_read);
+    
+    int return_code = brute_intersection(vehicle_fp, route_fp);
+    if (return_code == FILE_FAILURE)
+        printf("Falha no processamento do arquivo.\n");
+    else if (return_code == NOT_FOUND)
+        printf("Registro inexistente.\n");
+
+    free(route_filename);
+    free(vehicle_filename);
+    fclose(vehicle_fp);
+    fclose(route_fp);
+}
+
+void optimized_matching(){
+    // Abre para leitura e atualização e verifica a existência do arquivo binário
+    char *vehicle_filename = read_word(stdin);
+    FILE *vehicle_fp = fopen(vehicle_filename, "rb");
+    if (vehicle_fp == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        free(vehicle_filename);
+        return;
+    }
+
+    char *route_filename = read_word(stdin);
+    FILE *route_fp = fopen(route_filename, "rb");
+    if (route_fp == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        free(route_filename);
+        free(vehicle_filename);
+        fclose(vehicle_fp);
+        return;
+    }
+
+    char *to_read = read_word(stdin);
+    free(to_read);
+
+    to_read = read_word(stdin);
+    free(to_read);
+
+    // Indice linha
+    to_read = read_word(stdin);
+    btree *route_btree = load_btree(to_read);
+    if (route_btree == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        free(route_filename);
+        free(vehicle_filename);
+        free(to_read);
+        fclose(route_fp);
+        fclose(vehicle_fp);
+        return;
+    }
+    
+    int return_code = optimized_intersection(vehicle_fp, route_fp, route_btree);
+    if (return_code == FILE_FAILURE)
+        printf("Falha no processamento do arquivo.\n");
+    else if (return_code == NOT_FOUND)
+        printf("Registro inexistente.\n");
+
+    free(to_read);
+    free(route_filename);
+    free(vehicle_filename);
+    fclose(vehicle_fp);
+    fclose(route_fp);
+}
+
+void sort_file(CASE which_case){
+    // Abre para leitura e atualização e verifica a existência do arquivo binário
+    char *bin_filename = read_word(stdin);
+    FILE *bin_fp = fopen(bin_filename, "rb");
+    if (bin_fp == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        free(bin_filename);
+        return;
+    }
+
+    char *sorted_filename = read_word(stdin);
+    char *to_read = read_word(stdin);
+    free(to_read);
+
+    int return_code;
+    if (which_case == 1) 
+        return_code = write_sorted_vehicle_file(bin_fp, sorted_filename);
+    else 
+        return_code = write_sorted_route_file(bin_fp, sorted_filename);
+
+    if (return_code == FILE_FAILURE)
+        printf("Falha no processamento do arquivo.\n");
+    else if (return_code == NOT_FOUND)
+        printf("Registro inexistente.\n");
+
+    free(bin_filename);
+    free(sorted_filename);
+    fclose(bin_fp);
+}
+
+void merge_by_route_code() {
+    // Abre para leitura e atualização e verifica a existência do arquivo binário
+    char *vehicle_filename = read_word(stdin);
+    FILE *vehicle_fp = fopen(vehicle_filename, "rb");
+    if (vehicle_fp == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        free(vehicle_filename);
+        return;
+    }
+
+    char *route_filename = read_word(stdin);
+    FILE *route_fp = fopen(vehicle_filename, "rb");
+    if (route_fp == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        free(vehicle_filename);
+        free(route_filename);
+        fclose(route_fp);
+        return;
+    }
+
+    char *to_read = read_word(stdin);
+    free(to_read);
+
+    to_read = read_word(stdin);
+    free(to_read);
+
+    int return_code = merge_files(vehicle_fp, route_fp);
+    if (return_code == FILE_FAILURE)
+        printf("Falha no processamento do arquivo.\n");
+    else if (return_code == NOT_FOUND)
+        printf("Registro inexistente.\n");
+
+    free(vehicle_filename);
+    free(route_filename);
+    fclose(vehicle_fp);
+    fclose(route_fp);
+}
+
 void start_program(){
     char *operation = read_word(stdin); // código da operação 
     int which_case = atoi(operation);   // caso veículo ou linha
@@ -284,6 +442,14 @@ void start_program(){
         search_in_index_file(which_case % 2);
     else if (which_case == 13 || which_case == 14)  // 13 e 14, insere novos valores no binario e no indice
         extended_insert(which_case % 2);
+    else if (which_case == 15)                      // 15, junção de loop aninhado
+        brute_matching();
+    else if (which_case == 16)                      // 16, junção de loop único
+        optimized_matching();
+    else if (which_case == 17 || which_case == 18)  // 17 e 18, ordenação dos arquivos de dados
+        sort_file(which_case % 2);
+    else if (which_case == 19)                      // 19, junção ordenação-intercalação 
+        merge_by_route_code();
     else
         printf("Comando inválido\n");
 }

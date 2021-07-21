@@ -12,6 +12,7 @@
 
 #include "route.h"
 #include "vehicle.h"
+#include "intersect.h"
 
 void start_program();
 

@@ -174,10 +174,8 @@ void write_route(FILE *bin_fp, ROUTE *route){
 
 ROUTE **sort_route_file(FILE *bin_fp){
     bool vehicle_is_ok = check_bin_integrity(bin_fp);
-    if (!vehicle_is_ok) {
-        printf("Falha no carregamento do arquivo.\n");
+    if (!vehicle_is_ok) 
         return NULL;   
-    }
 
     ROUTE_HEADER header = get_route_header(bin_fp);
 
@@ -196,12 +194,17 @@ void free_route_registers(ROUTE **routes, int num_of_regs){
     free(routes);
 }
 
-void write_sorted_route_file(FILE *bin_fp, char *new_file_name){
+int write_sorted_route_file(FILE *bin_fp, char *new_file_name){
     ROUTE_HEADER header = get_route_header(bin_fp);
     
     ROUTE **routes = sort_route_file(bin_fp);
+    if (routes == NULL) 
+        return FILE_FAILURE; 
 
     FILE *new_fp = fopen(new_file_name, "wb");
+    if (new_fp == NULL) 
+        return FILE_FAILURE; 
+
     write_route_header(new_fp, &header);
 
     for (int i = 0; i < header.num_of_regs; i++) {
@@ -216,6 +219,8 @@ void write_sorted_route_file(FILE *bin_fp, char *new_file_name){
     update_header(new_fp, header.status, header.next_reg);
 
     fclose(new_fp);
+
+    return SUCCESS;
 }
 
 bool vehicle_compare(const void *v1, const void *v2){
@@ -284,7 +289,6 @@ void write_vehicle(FILE *bin_fp, VEHICLE *vehicle){
 VEHICLE **sort_vehicle_file(FILE *bin_fp){
     bool vehicle_is_ok = check_bin_integrity(bin_fp);
     if (!vehicle_is_ok) {
-        printf("Falha no carregamento do arquivo.\n");
         return NULL;
     }
 
@@ -305,12 +309,17 @@ void free_vehicle_registers(VEHICLE **vehicles, int num_of_regs){
     free(vehicles);
 }
 
-void write_sorted_vehicle_file(FILE *bin_fp, char *new_file_name){
+int write_sorted_vehicle_file(FILE *bin_fp, char *new_file_name){
     VEHICLE_HEADER header = get_vehicle_header(bin_fp);
     
     VEHICLE **vehicles = sort_vehicle_file(bin_fp);
+    if (vehicles == NULL) 
+        return FILE_FAILURE;
 
     FILE *new_fp = fopen(new_file_name, "wb");
+    if (new_fp == NULL) 
+        return FILE_FAILURE;
+
     write_vehicle_header(new_fp, &header);
 
     for (int i = 0; i < header.num_of_regs; i++) {
@@ -325,14 +334,16 @@ void write_sorted_vehicle_file(FILE *bin_fp, char *new_file_name){
     update_header(new_fp, header.status, header.next_reg);
 
     fclose(new_fp);
+
+    return SUCCESS;
 }
 
-void merge_files(FILE *vehicle_fp, FILE *route_fp){
+int merge_files(FILE *vehicle_fp, FILE *route_fp){
     VEHICLE **vehicles = sort_vehicle_file(vehicle_fp);
     ROUTE **routes = sort_route_file(route_fp);
 
     if (vehicles == NULL || routes == NULL)
-        printf("Falha no processamento do arquivo.\n");
+        return FILE_FAILURE;
 
     int num_of_vehicles = get_num_of_vehicles(vehicle_fp);
     int num_of_routes = get_num_of_routes(route_fp);
@@ -357,28 +368,7 @@ void merge_files(FILE *vehicle_fp, FILE *route_fp){
     free_vehicle_registers(vehicles, num_of_vehicles);
 
     if (!has_matches)
-        printf("Registro inexistente.\n");
-}
+        return NOT_FOUND;
 
-int main() {
-    FILE *vehicle_fp = fopen("veiculo1.bin", "rb");
-    FILE *route_fp = fopen("linha1.bin", "rb");
-    char nfn[50] = "veiculoOrdenado.bin";
-    char nfn2[50] = "rotaOrdenado.bin";
-    // char sf[50] = "CodLinha";
-
-    // char fn[50] = "indiceLinha1.bin";
-    // btree *new_tree = load_btree(fn);
-    // optimized_intersection(vehicle_fp, route, new_tree);
-    // brute_intersection(vehicle_fp, route);
-    write_sorted_vehicle_file(vehicle_fp, nfn);
-    write_sorted_route_file(route_fp, nfn2);
-
-    merge_files(vehicle_fp, route_fp);
-
-    // destroy_btree(new_tree);
-    fclose(vehicle_fp);
-    fclose(route_fp);
-
-    return 0;
+    return SUCCESS;
 }
